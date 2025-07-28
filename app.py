@@ -513,7 +513,35 @@ def delete_course(course_id):
     
     return redirect(url_for('admin_dashboard'))
 
+#________________admin add subject management______________
+@app.route('/admin/add_subject', methods=['GET', 'POST'])
+def add_subject():
+    if 'user_id' not in session or session['role'] != 'admin':
+        flash('You must be logged in as an admin to access this page.', 'danger')
+        return redirect(url_for('login'))  # Redirect to login if not an admin
 
+    db = SessionLocal()  # Creating the database session
+
+    if request.method == 'POST':
+        subject_name = request.form.get('subject_name')
+
+        if subject_name:
+            # Check if the subject already exists
+            existing_subject = db.query(Subject).filter_by(name=subject_name).first()
+            if existing_subject:
+                flash(f'Subject "{subject_name}" already exists.', 'danger')
+            else:
+                # Create and add the new subject
+                new_subject = Subject(name=subject_name)
+                db.add(new_subject)
+                db.commit()
+                flash(f'Subject "{subject_name}" added successfully!', 'success')
+                return redirect(url_for('admin_dashboard'))  # Redirect to dashboard after successful subject addition
+        else:
+            flash('Subject name cannot be empty.', 'danger')
+
+    db.close()  # Close the session
+    return render_template('admin/add_subject.html')
 
 if __name__ == "__main__":
     app.run(debug=True)

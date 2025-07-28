@@ -120,6 +120,6 @@ def parse_docx_questions(file_stream, image_output_dir=DEFAULT_IMAGE_DIR):
 
     print(f"✅ Parsed {len(questions)} valid questions.")
     if skipped > 0:
-        print(f"⚠️ Skipped {skipped} question(s) due to missing answers or invalid format.")
+        print(f" Skipped {skipped} question(s) due to missing answers or invalid format.")
 
     return questions

@@ -167,11 +167,8 @@
   <!-- Sidebar -->
   <div class="sidebar">
     <a href="{{ url_for('add_course') }}">Add Course</a>
-
+    <a href="{{ url_for('add_subject') }}">Add Subject</a> <!-- Link to add subject -->
     <a href="{{ url_for('upload_exam') }}">Upload Quiz</a>
-   
-   
-   
     <a href="/logout">Logout</a>
   </div>
 
@@ -197,7 +194,14 @@
       <div class="section-title">Course Management</div>
       <div class="cards">
         <a href="{{ url_for('add_course') }}" class="card">Add Course</a>
-        
+      </div>
+    </div>
+
+    <!-- Subject Management Section -->
+    <div class="section">
+      <div class="section-title">Subject Management</div>
+      <div class="cards">
+        <a href="{{ url_for('add_subject') }}" class="card">Add Subject</a> <!-- Link for managing subjects -->
       </div>
     </div>
 
@@ -253,8 +257,6 @@
     <div class="section">
       <div class="section-title">Results & Reports</div>
       <div class="cards">
-      
-        
       </div>
     </div>
   </div>
