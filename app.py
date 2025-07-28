@@ -6,6 +6,9 @@ import os
 from utils import parse_docx_questions
 from datetime import datetime
 from sqlalchemy.orm import joinedload
+import io
+import csv
+from flask import Response
 
 app = Flask(__name__)
 app.secret_key = '00025000000000000' 
@@ -543,5 +546,76 @@ def add_subject():
     db.close()  # Close the session
     return render_template('admin/add_subject.html')
 
+#_______________VIEW _______________
+
+@app.route('/admin/results', methods=['GET', 'POST'])
+def admin_results():
+    if session.get('role') != 'admin':
+        return redirect('/login')
+
+    db = SessionLocal()
+
+    # Fetch courses and subjects for the dropdown
+    courses = db.query(Course).all()
+    subjects = db.query(Subject).all()
+
+    # Filter options
+    selected_course = request.form.get('course')
+    selected_subject = request.form.get('subject')
+    export = request.form.get('export')
+
+    # Base query for results
+    query = db.query(Result).join(Result.quiz).join(Quiz.course).join(Quiz.subject).options(
+        joinedload(Result.quiz).joinedload(Quiz.subject),
+        joinedload(Result.quiz).joinedload(Quiz.course),
+        joinedload(Result.student)
+    )
+
+    if selected_course:
+        query = query.filter(Quiz.course_id == int(selected_course))
+    if selected_subject:
+        query = query.filter(Quiz.subject_id == int(selected_subject))
+
+    results = query.all()
+
+    # Handle CSV export
+    if export == 'true':
+        import io
+        import csv
+        output = io.StringIO()
+        writer = csv.writer(output)
+        
+        # Write CSV header
+        writer.writerow(['Student', 'Course', 'Subject', 'Quiz Title', 'Score', 'Total Marks', 'Percentage', 'Taken On'])
+        
+        # Write data rows
+        for r in results:
+            writer.writerow([
+                r.student.username if r.student else 'N/A',
+                r.quiz.course.name if r.quiz and r.quiz.course else 'N/A',
+                r.quiz.subject.name if r.quiz and r.quiz.subject else 'N/A',
+                r.quiz.title if r.quiz else 'N/A',
+                r.score,
+                r.total_marks,
+                r.percentage,
+                r.taken_on.strftime("%Y-%m-%d %H:%M:%S")
+            ])
+        
+        output.seek(0)
+        return Response(
+            output.getvalue(),
+            mimetype="text/csv",
+            headers={"Content-Disposition": "attachment; filename=results.csv"}
+        )
+
+    db.close()
+    return render_template('admin/admin_results.html',
+                           courses=courses,
+                           subjects=subjects,
+                           results=results,
+                           selected_course=selected_course,
+                           selected_subject=selected_subject)
+   
+    
 if __name__ == "__main__":
     app.run(debug=True)
