@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ quiz.title }}</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+</head>
+<body>
+
+<div class="container mt-5">
+    <h1>{{ quiz.title }}</h1>
+
+    <!-- Timer Section -->
+    <div id="timer">
+        Time Remaining: 01:59:59
+    </div>
+
+    <hr>
+
+    <!-- Instructions Section -->
+    <p><strong>Instructions:</strong> Please answer all questions. Navigate through the questions using the "Next" and "Previous" buttons. Only submit once you're done with all questions.</p>
+
+    <form method="POST" id="examForm">
+        <div id="questionsContainer">
+            {% for question in questions %}
+                <div class="question-box" style="display: none;" data-index="{{ loop.index0 }}">
+                    <p><strong>Question {{ loop.index + 1 }}:</strong> {{ question.question_text }}</p>
+                    <label><input type="radio" name="question_{{ question.id }}" value="A"> {{ question.option_a }}</label><br>
+                    <label><input type="radio" name="question_{{ question.id }}" value="B"> {{ question.option_b }}</label><br>
+                    <label><input type="radio" name="question_{{ question.id }}" value="C"> {{ question.option_c }}</label><br>
+                    <label><input type="radio" name="question_{{ question.id }}" value="D"> {{ question.option_d }}</label><br>
+                </div>
+            {% endfor %}
+        </div>
+
+        <!-- Navigation Buttons -->
+        <button type="button" id="prevBtn" class="btn btn-primary" onclick="prevQuestion()">Previous</button>
+        <button type="button" id="nextBtn" class="btn btn-primary" onclick="nextQuestion()">Next</button>
+
+        <!-- Submit Button -->
+        <button type="submit" id="submitBtn" class="btn btn-success" style="display:none;">Submit Exam</button>
+    </form>
+</div>
+
+<!-- Optional Bootstrap JS -->
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    let currentIndex = 0;
+    const totalQuestions = {{ questions | length }};
+    
+    // Timer Logic
+    let timeRemaining = 1 * 60 * 60; // 1 hour in seconds
+    const timerElement = document.getElementById("timer");
+
+    function updateTimer() {
+        let hours = Math.floor(timeRemaining / 3600);
+        let minutes = Math.floor((timeRemaining % 3600) / 60);
+        let seconds = timeRemaining % 60;
+
+        // Format time to hh:mm:ss
+        timerElement.textContent = `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+
+        if (timeRemaining <= 0) {
+            alert("Time is up! Submitting your answers.");
+            document.getElementById("examForm").submit();
+        } else {
+            timeRemaining--;
+        }
+    }
+
+    setInterval(updateTimer, 1000); // Update the timer every second
+
+    // Show the current question
+    function showQuestion(index) {
+        const questionDivs = document.querySelectorAll('.question-box');
+        questionDivs.forEach((div, i) => {
+            div.style.display = (i === index) ? 'block' : 'none';
+        });
+
+        // Toggle visibility of buttons
+        document.getElementById('prevBtn').style.display = (index === 0) ? 'none' : 'inline-block';
+        document.getElementById('nextBtn').style.display = (index === totalQuestions - 1) ? 'none' : 'inline-block';
+        document.getElementById('submitBtn').style.display = (index === totalQuestions - 1) ? 'inline-block' : 'none';
+    }
+
+    // Move to the next question
+    function nextQuestion() {
+        if (currentIndex < totalQuestions - 1) {
+            currentIndex++;  // Update the currentIndex
+            showQuestion(currentIndex);  // Display the updated question
+        } else {
+            console.log("No more questions to move to.");
+        }
+    }
+
+    // Move to the previous question
+    function prevQuestion() {
+        if (currentIndex > 0) {
+            currentIndex--;  // Update the currentIndex
+            showQuestion(currentIndex);  // Display the updated question
+        } else {
+            console.log("You are at the first question.");
+        }
+    }
+
+    window.onload = function () {
+        showQuestion(0); // Show first question
+    };
+</script>
+
+</body>
+</html>

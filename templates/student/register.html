@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register</title>
+    <style>
+        /* Global Styles */
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f7fc;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .container {
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        h2 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 20px;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        label {
+            font-weight: 600;
+            color: #34495e;
+        }
+
+        input[type="text"], input[type="password"] {
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #ced4da;
+            font-size: 1rem;
+            color: #333;
+            transition: border 0.3s ease;
+        }
+
+        input[type="text"]:focus, input[type="password"]:focus {
+            border-color: #3498db;
+            outline: none;
+            box-shadow: 0 0 5px rgba(52, 152, 219, 0.3);
+        }
+
+        button {
+            background-color: #3498db;
+            color: white;
+            padding: 12px;
+            border-radius: 8px;
+            border: none;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #2980b9;
+        }
+
+        .messages {
+            color: red;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+        }
+
+        .login-link {
+            display: block;
+            text-align: center;
+            margin-top: 15px;
+            font-size: 1rem;
+            color: #3498db;
+        }
+
+        .login-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>Register</h2>
+
+        <!-- Display Flash messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="messages">
+                    <ul>
+                        {% for category, message in messages %}
+                            <li>{{ message }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <form method="POST">
+            <label for="username">Username:</label>
+            <input type="text" id="username" name="username" required><br>
+
+            <label for="password">Password:</label>
+            <input type="password" id="password" name="password" required><br>
+
+            <button type="submit">Register</button>
+        </form>
+
+        <a href="{{ url_for('login') }}" class="login-link">Already have an account? Login</a>
+    </div>
+
+</body>
+</html>
