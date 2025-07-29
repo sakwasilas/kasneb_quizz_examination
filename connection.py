@@ -1,18 +1,21 @@
+import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session, declarative_base
-import os
 
-# Pull from Render environment variable
-DATABASE_URL = os.environ.get("SQLALCHEMY_DATABASE_URI")
+# Get database URL from environment
+DATABASE_URL = os.environ.get("DATABASE_URL")
 
-# PostgreSQL connection with SSL (important for Render)
+if not DATABASE_URL:
+    raise ValueError("DATABASE_URL is not set!")
+
+# SQLAlchemy engine
 engine = create_engine(
     DATABASE_URL,
     pool_size=10,
     max_overflow=20,
     pool_timeout=30,
     pool_recycle=1800,
-    connect_args={"sslmode": "require"}  # Enforce SSL connection
+    connect_args={"sslmode": "require"}  # Required for Render PostgreSQL
 )
 
 Session = scoped_session(sessionmaker(bind=engine))
