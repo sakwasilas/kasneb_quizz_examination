@@ -123,3 +123,9 @@ def parse_docx_questions(file_stream, image_output_dir=DEFAULT_IMAGE_DIR):
         print(f" Skipped {skipped} question(s) due to missing answers or invalid format.")
 
     return questions
+
+
+def get_quiz_status(session, quiz_id, student_id):
+    from models import Result  # or wherever your Result model is
+    result = session.query(Result).filter_by(quiz_id=quiz_id, student_id=student_id).first()
+    return 'Completed' if result else 'Pending'

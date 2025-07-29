@@ -9,7 +9,8 @@ from sqlalchemy.orm import joinedload
 import io
 import csv
 from flask import Response
-print("DATABASE_URL =", os.environ.get("DATABASE_URL"))
+from utils import get_quiz_status
+
 app = Flask(__name__)
 app.secret_key = '00025000000000000' 
 
@@ -31,7 +32,6 @@ def allowed_file(filename):
 @app.route('/')
 def home():
     return redirect ('/login')
-
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -55,8 +55,7 @@ def login():
                 else:
                     return redirect(url_for('admin_dashboard'))
             else:
-                error = True  # Username or password is incorrect
-
+                error = True  # Incorrect credentials
         finally:
             db.close()
 
@@ -66,144 +65,148 @@ def login():
 #--------------student dashboard ----------------
 @app.route('/student/dashboard')
 def student_dashboard():
-    if 'username' not in session:
-        flash('Please log in first.', 'error')
+    if 'username' not in session or session.get('role') != 'student':
+        flash('Please log in as a student first.', 'error')
         return redirect(url_for('login'))
 
     db = SessionLocal()
- 
-    user = db.query(User).filter_by(username=session['username']).first()
+    try:
+        # Fetch user
+        user = db.query(User).filter_by(username=session['username']).first()
+        if not user:
+            flash("User not found.", "error")
+            return redirect(url_for('logout'))
 
- 
-    student_profile = db.query(StudentProfile).options(joinedload(StudentProfile.course)).filter_by(user_id=user.id).first()
+  
+        student_profile = db.query(StudentProfile).options(
+            joinedload(StudentProfile.course)
+        ).filter_by(user_id=user.id).first()
 
-    if not student_profile:
-        flash("Complete your profile before proceeding.", "warning")
-        return redirect(url_for('complete_profile'))
+        if not student_profile:
+            flash("Complete your profile before proceeding.", "warning")
+            return redirect(url_for('complete_profile'))
 
-    
-    course_name = student_profile.course.name if student_profile.course else ''
 
-    
-    available_quizzes = db.query(Quiz).filter_by(course_id=student_profile.course_id).all()
+        course_name = student_profile.course.name if student_profile.course else ''
 
-    
-    results = db.query(Result).join(Quiz).options(joinedload(Result.quiz).joinedload(Quiz.subject)).filter(Result.student_id == user.id).all()
+   
+        available_quizzes = db.query(Quiz).filter_by(course_id=student_profile.course_id).all()
 
-    db.close()  
-    return render_template(
-        'student/student_dashboard.html',
-        profile=student_profile,
-        quizzes=available_quizzes,
-        results=results,
-        course_name=course_name,
-        year=datetime.utcnow().year
-    )
+      
+        results = db.query(Result).join(Quiz).options(
+            joinedload(Result.quiz).joinedload(Quiz.subject)
+        ).filter(Result.student_id == user.id).all()
 
+       
+        return render_template(
+            'student/student_dashboard.html',
+            profile=student_profile,
+            quizzes=available_quizzes,
+            results=results,
+            course_name=course_name,
+            year=datetime.utcnow().year
+        )
+
+    finally:
+        db.close()
+#______________admin dashboard__________________
 @app.route('/admin/dashboard')
 def admin_dashboard():
-    if 'user_id' not in session or session['role'] != 'admin':
-        return redirect(url_for('login'))  
+    if 'user_id' not in session or session.get('role') != 'admin':
+        flash('Admin access required. Please log in.', 'error')
+        return redirect(url_for('login'))
 
-    # Query all courses to display them in the sidebar for editing
     db = SessionLocal()
-    courses = db.query(Course).all()
-    db.close()
+    try:
+        courses = db.query(Course).all()
+    finally:
+        db.close()
 
     return render_template('admin/admin_dashboard.html', courses=courses)
 
-
-# Route to log out
-@app.route('/logout')
-def logout():
-    session.pop('user_id', None)
-    session.pop('role', None)
-    flash('You have been logged out', 'info')
-    return redirect(url_for('login'))
-
 '-----------new student kinldy register-----------------'
-
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
         
-      
-        existing_user = SessionLocal.query(User).filter_by(username=username).first()
-        if existing_user:
-            flash('Username already exists, please choose another one.', 'danger')
-            return redirect(url_for('register'))
+        # Create a session instance
+        db = SessionLocal()
+        try:
+            # Check if username already exists
+            existing_user = db.query(User).filter_by(username=username).first()
+            if existing_user:
+                flash('Username already exists, please choose another one.', 'danger')
+                return redirect(url_for('register'))
 
-      
-        new_user = User(username=username, password=password, role='student')
-        SessionLocal.add(new_user)
-        SessionLocal.commit()
+            # Create and add the new user
+            new_user = User(username=username, password=password, role='student')
+            db.add(new_user)
+            db.commit()
 
-        flash('Registration successful! Please log in.', 'success')
-        return redirect(url_for('login'))
+            flash('Registration successful! Please log in.', 'success')
+            return redirect(url_for('login'))
+        finally:
+            db.close()
 
     return render_template('student/register.html')
-
 #--------------------new student complete your profile please---------------'
 @app.route('/complete_profile', methods=['GET', 'POST'])
 def complete_profile():
-   
-    if 'user_id' not in session or session['role'] != 'student':
-        return redirect(url_for('login'))  
-    
-    user_id = session['user_id']
+    if 'user_id' not in session or session.get('role') != 'student':
+        flash('Please log in as a student.', 'warning')
+        return redirect(url_for('login'))
 
-    
+    user_id = session['user_id']
     db = SessionLocal()
 
-    
-    student_profile = db.query(StudentProfile).filter_by(user_id=user_id).first()
+    student_profile = None
+    courses = []
 
-    if request.method == 'POST':
-        
-        full_name = request.form.get('full_name')
-        course_id = request.form.get('course_id')
-        level = request.form.get('level')
-        kasneb_no = request.form.get('kasneb_no')
+    try:
+        student_profile = db.query(StudentProfile).filter_by(user_id=user_id).first()
+        courses = db.query(Course).all()
 
-        if student_profile:
-            
-            student_profile.full_name = full_name
-            student_profile.course_id = course_id
-            student_profile.level = level
-            student_profile.kasneb_no = kasneb_no
-            student_profile.profile_completed = True
-        else:
-            
-            student_profile = StudentProfile(
-                user_id=user_id,
-                full_name=full_name,
-                course_id=course_id,
-                level=level,
-                kasneb_no=kasneb_no,
-                profile_completed=True
-            )
-            db.add(student_profile)
+        if request.method == 'POST':
+            full_name = request.form.get('full_name')
+            course_id = request.form.get('course_id')
+            level = request.form.get('level')
+            kasneb_no = request.form.get('kasneb_no')
 
-        try:
-            
+            if student_profile:
+                student_profile.full_name = full_name
+                student_profile.course_id = course_id
+                student_profile.level = level
+                student_profile.kasneb_no = kasneb_no
+                student_profile.profile_completed = True
+            else:
+                student_profile = StudentProfile(
+                    user_id=user_id,
+                    full_name=full_name,
+                    course_id=course_id,
+                    level=level,
+                    kasneb_no=kasneb_no,
+                    profile_completed=True
+                )
+                db.add(student_profile)
+
             db.commit()
-            flash('Profile updated successfully', 'success')
-            return redirect(url_for('student_dashboard'))  
-        except Exception as e:
-        
-            db.rollback()
-            flash(f'Error: {str(e)}', 'danger')
-    
+            flash('Profile updated successfully.', 'success')
+            return redirect(url_for('student_dashboard'))
 
-    courses = db.query(Course).all()
+    except Exception as e:
+        db.rollback()
+        flash(f'Error updating profile: {str(e)}', 'danger')
 
+    finally:
+        db.close()
 
-    db.close()
-
-    return render_template('student/complete_profile.html', courses=courses, student_profile=student_profile)
-
+    return render_template(
+        'student/complete_profile.html',
+        courses=courses,
+        student_profile=student_profile
+    )
 @app.route('/student/take_exam/<int:quiz_id>', methods=['GET', 'POST'])
 def take_exam(quiz_id):
     if 'username' not in session:
@@ -211,71 +214,85 @@ def take_exam(quiz_id):
         return redirect(url_for('login'))
 
     db = SessionLocal()
-    quiz = db.query(Quiz).filter_by(id=quiz_id).first()
+    try:
+        quiz = db.query(Quiz).filter_by(id=quiz_id).first()
 
-    if not quiz or quiz.status != 'active':
-        flash('This exam is not available', 'danger')
+        if not quiz or quiz.status != 'active':
+            flash('This exam is not available.', 'danger')
+            return redirect(url_for('student_dashboard'))
+
+        # Prevent retakes
+        existing_result = db.query(Result).filter_by(
+            student_id=session['user_id'], quiz_id=quiz_id).first()
+        if existing_result:
+            flash('You have already taken this exam.', 'warning')
+            return redirect(url_for('student_dashboard'))
+
+        questions = db.query(Question).filter_by(quiz_id=quiz_id).all()
+
+        if request.method == 'POST':
+            total_raw_marks = sum(q.marks for q in questions)
+            score_raw = 0
+
+            for question in questions:
+                answer = request.form.get(f'question_{question.id}')
+                if answer and answer.strip().lower() == question.correct_option.strip().lower():
+                    score_raw += question.marks
+
+            # Scale score to 50
+            if total_raw_marks > 0:
+                score = (score_raw / total_raw_marks) * 50
+                percentage = (score / 50) * 100
+            else:
+                score = 0
+                percentage = 0
+
+            result = Result(
+                student_id=session['user_id'],
+                quiz_id=quiz_id,
+                score=round(score, 2),
+                total_marks=50,
+                percentage=round(percentage, 2)
+            )
+
+            db.add(result)
+            db.commit()
+            db.refresh(result)
+
+            flash(f'Exam submitted successfully. Your result: {round(score,2)}/50 ({round(percentage,2)}%)', 'success')
+            return redirect(url_for('view_result', result_id=result.id))
+
+        return render_template('student/take_exam.html', quiz=quiz, questions=questions)
+
+    finally:
         db.close()
-        return redirect(url_for('student_dashboard'))
 
-    # Prevent retakes
-    existing_result = db.query(Result).filter_by(student_id=session['user_id'], quiz_id=quiz_id).first()
-    if existing_result:
-        flash('You have already taken this exam.', 'warning')
-        db.close()
-        return redirect(url_for('student_dashboard'))
-
-    questions = db.query(Question).filter_by(quiz_id=quiz_id).all()
-
-    if request.method == 'POST':
-        total_marks = 0
-        score = 0
-
-        for question in questions:
-            answer = request.form.get(f'question_{question.id}')
-            if answer and answer.lower() == question.correct_option:
-                score += question.marks
-            total_marks += question.marks
-
-        # Assume the quiz is out of 50 max
-        percentage = (score / 50) * 100 if total_marks > 0 else 0
-
-        result = Result(
-            student_id=session['user_id'],
-            quiz_id=quiz_id,
-            score=score,
-            total_marks=50,  # Fixed max marks
-            percentage=percentage
-        )
-
-        db.add(result)
-        db.flush()
-        db.commit()
-        db.refresh(result)
-        flash(f'Exam submitted successfully. Your result: {score}/50 ({percentage:.2f}%)', 'success')
-        db.close()
-        return redirect(url_for('view_result', result_id=result.id))
-
-    db.close()
-    return render_template('student/take_exam.html', quiz=quiz, questions=questions)
 
 #-----------------student to view their results------------------------------------
 @app.route('/student/result/<int:result_id>')
 def view_result(result_id):
-    if 'username' not in session:
-        flash('Please log in first.', 'error')
+    if 'user_id' not in session or session.get('role') != 'student':
+        flash('Please log in as a student.', 'warning')
         return redirect(url_for('login'))
 
     db = SessionLocal()
-    result = db.query(Result).filter_by(id=result_id).first()
 
-    if not result:
-        flash('Result not found', 'danger')
+    try:
+        result = db.query(Result).filter_by(id=result_id, student_id=session['user_id']).first()
+
+        if not result:
+            flash('Result not found or unauthorized access.', 'danger')
+            return redirect(url_for('student_dashboard'))
+
+        return render_template('student/view_result.html', result=result)
+
+    except Exception as e:
+        flash(f'Error loading result: {str(e)}', 'danger')
         return redirect(url_for('student_dashboard'))
 
-    db.close()
+    finally:
+        db.close()
 
-    return render_template('student/view_result.html', result=result)
 
 #------student submit results route--------------------------------
 @app.route('/submit_exam/<quiz_id>', methods=['POST'])
@@ -604,6 +621,12 @@ def admin_results():
                            results=results,
                            selected_course=selected_course,
                            selected_subject=selected_subject)
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    flash("You have been logged out.", "info")
+    return redirect(url_for('login'))
    
     
 if __name__ == "__main__":

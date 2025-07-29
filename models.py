@@ -56,13 +56,6 @@ class Quiz(Base):
     questions = relationship('Question', cascade='all, delete-orphan', backref='quiz')
     results = relationship('Result', backref='quiz')
 
-    def update_status(self, student_id):
-        result = Result.query.filter_by(quiz_id=self.id, student_id=student_id).first()
-        if result:
-            return 'Completed'
-        else:
-            return 'Pending'  
-   
 
 class Question(Base):
     __tablename__ = "questions"

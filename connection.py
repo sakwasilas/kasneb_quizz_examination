@@ -1,17 +1,25 @@
-import os
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, declarative_base
+from sqlalchemy.orm import sessionmaker, scoped_session, declarative_base
 
-# Use SQLite with file name exams_25.db
-DATABASE_URL = "sqlite:///exams_25.db"
+# MySQL connection details
+username = "root"
+password = "2480"
+database = "exams_25"
 
-# Create SQLAlchemy engine
+# SQLAlchemy database URL
+path = f"mysql+mysqldb://{username}:{password}@localhost/{database}?charset=utf8mb4"
+
+# Create engine with connection pool settings
 engine = create_engine(
-    DATABASE_URL, connect_args={"check_same_thread": False}
+    path,
+    pool_size=10,
+    max_overflow=20,
+    pool_timeout=30,
+    pool_recycle=1800,
 )
 
-# Create session factory
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+# Use scoped_session to handle threads automatically
+Session = scoped_session(sessionmaker(bind=engine))
+SessionLocal = Session  # Alias for compatibility
 
-# Base class for models
 Base = declarative_base()
