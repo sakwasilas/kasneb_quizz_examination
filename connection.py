@@ -9,7 +9,7 @@ DB_URL = os.environ.get("DATABASE_URL")  # Render will set this
 if not DB_URL:
     username = "root"
     password = "2480"
-    database = "summit_db"
+    database = "exams_25"
     DB_URL = f"mysql+mysqldb://{username}:{password}@localhost/{database}?charset=utf8mb4"
 
 engine = create_engine(DB_URL)
