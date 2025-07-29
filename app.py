@@ -35,38 +35,32 @@ def home():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    error = False  # Default: no error
+
     if request.method == 'POST':
-       
         username = request.form.get('username')
         password = request.form.get('password')
 
-      
         db = SessionLocal()
-
         try:
-     
             user = db.query(User).filter_by(username=username).first()
 
-            if user and user.password == password: 
-               
+            if user and user.password == password:
                 session['username'] = user.username
                 session['user_id'] = user.id
-                session['role'] = user.role  
+                session['role'] = user.role
 
-             
                 if user.role == 'student':
                     return redirect(url_for('student_dashboard'))
                 else:
                     return redirect(url_for('admin_dashboard'))
-
             else:
-                flash("Invalid username or password", "danger")
-                return redirect(url_for('login'))
+                error = True  # Username or password is incorrect
 
         finally:
             db.close()
 
-    return render_template('login.html')
+    return render_template('login.html', error=error)
 
 
 #--------------student dashboard ----------------
@@ -210,7 +204,6 @@ def complete_profile():
 
     return render_template('student/complete_profile.html', courses=courses, student_profile=student_profile)
 
-#--------------------A route for students to take examination-----------------
 @app.route('/student/take_exam/<int:quiz_id>', methods=['GET', 'POST'])
 def take_exam(quiz_id):
     if 'username' not in session:
@@ -222,49 +215,45 @@ def take_exam(quiz_id):
 
     if not quiz or quiz.status != 'active':
         flash('This exam is not available', 'danger')
+        db.close()
         return redirect(url_for('student_dashboard'))
 
-    # Fetch all questions for this quiz
+    # Prevent retakes
+    existing_result = db.query(Result).filter_by(student_id=session['user_id'], quiz_id=quiz_id).first()
+    if existing_result:
+        flash('You have already taken this exam.', 'warning')
+        db.close()
+        return redirect(url_for('student_dashboard'))
+
     questions = db.query(Question).filter_by(quiz_id=quiz_id).all()
 
     if request.method == 'POST':
         total_marks = 0
         score = 0
 
-        # Collect answers and calculate score
         for question in questions:
-            # Get the selected answer from the form
             answer = request.form.get(f'question_{question.id}')
-            
-            # Ensure the selected answer is in lowercase to match with the 'correct_option'
             if answer and answer.lower() == question.correct_option:
                 score += question.marks
             total_marks += question.marks
 
-        percentage = (score / total_marks) * 100 if total_marks > 0 else 0
+        # Assume the quiz is out of 50 max
+        percentage = (score / 50) * 100 if total_marks > 0 else 0
 
-        # Create the result object
         result = Result(
             student_id=session['user_id'],
             quiz_id=quiz_id,
             score=score,
-            total_marks=total_marks,
+            total_marks=50,  # Fixed max marks
             percentage=percentage
         )
 
         db.add(result)
-        db.flush()  # Ensure that the result is flushed to the database and the ID is set
-
+        db.flush()
         db.commit()
-
-        # Refresh the result object to access the ID
         db.refresh(result)
-
-        flash(f'Exam submitted successfully. Your result: {score}/{total_marks} ({percentage}%)', 'success')
-
+        flash(f'Exam submitted successfully. Your result: {score}/50 ({percentage:.2f}%)', 'success')
         db.close()
-
-        # Redirect to the result view page
         return redirect(url_for('view_result', result_id=result.id))
 
     db.close()
