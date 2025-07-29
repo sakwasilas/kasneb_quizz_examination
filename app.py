@@ -629,5 +629,9 @@ def logout():
     return redirect(url_for('login'))
    
     
-if __name__ == "__main__":
+if __name__ == '__main__':
+    with app.app_context():
+        from models import db
+        db.create_all()
+        print("✅ Tables created.")
     app.run(debug=True)
