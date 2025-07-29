@@ -1,23 +1,11 @@
-import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session, declarative_base
 
-# Get database URL from environment
-DATABASE_URL = os.environ.get("DATABASE_URL")
+DATABASE_URL = "postgresql+psycopg2://exams_25_hax1:muCCD3uQohdUFIBe23co6fRZZJ26hE58@dpg-d24b0p8gjchc7388c5bg-a.oregon-postgres.render.com:5432/exams_25_hax1"
 
-if not DATABASE_URL:
-    raise ValueError("DATABASE_URL is not set!")
-
-# SQLAlchemy engine
-engine = create_engine(
-    DATABASE_URL,
-    pool_size=10,
-    max_overflow=20,
-    pool_timeout=30,
-    pool_recycle=1800,
-    connect_args={"sslmode": "require"}  # Required for Render PostgreSQL
-)
+engine = create_engine(DATABASE_URL)
 
 Session = scoped_session(sessionmaker(bind=engine))
 SessionLocal = Session
+
 Base = declarative_base()
