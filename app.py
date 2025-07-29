@@ -9,7 +9,7 @@ from sqlalchemy.orm import joinedload
 import io
 import csv
 from flask import Response
-
+print("DATABASE_URL =", os.environ.get("DATABASE_URL"))
 app = Flask(__name__)
 app.secret_key = '00025000000000000' 
 

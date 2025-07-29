@@ -2,10 +2,13 @@ import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-DB_URL = os.environ.get("DATABASE_URL")
-if not DB_URL:
-    DB_URL = "postgresql+psycopg2://exams_25_user:DWhPyXT1eKVhPdkKmPC3XglqrJIVXTsZ@dpg-d246sh1r0fns73arnc6g-a:5432/exams_25"
+# Read the DATABASE_URL from environment variable
+DATABASE_URL = os.getenv("DATABASE_URL")
 
-engine = create_engine(DB_URL)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+# Fallback if env variable is not found
+if not DATABASE_URL:
+    raise ValueError("No DATABASE_URL set in environment variables.")
+
+engine = create_engine(DATABASE_URL)
+SessionLocal = sessionmaker(bind=engine)
 Base = declarative_base()
