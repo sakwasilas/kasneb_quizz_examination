@@ -593,7 +593,7 @@ def admin_results():
         writer = csv.writer(output)
         
         # Write CSV header
-        writer.writerow(['Student', 'Course', 'Subject', 'Quiz Title', 'Score', 'Total Marks', 'Percentage', 'Taken On'])
+        writer.writerow(['Student ID', 'Full Name', 'Course', 'Subject', 'Quiz Title', 'Score', 'Total Marks', 'Percentage', 'Taken On'])
         
         # Write data rows
         for r in results:
