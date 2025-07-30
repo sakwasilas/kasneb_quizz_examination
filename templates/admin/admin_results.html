@@ -203,7 +203,7 @@
           {% for r in results %}
           <tr>
             <td>{{ r.student.username if r.student else 'N/A' }}</td>
-           <td>{{ r.student.full_name if r.student else 'N/A' }}</td>
+            <td>{{ r.student.profile.full_name if r.student and r.student.profile else 'N/A' }}</td>
             <td>{{ r.quiz.course.name if r.quiz.course else 'N/A' }}</td>
             <td>{{ r.quiz.subject.name if r.quiz.subject else 'N/A' }}</td>
             <td>{{ r.quiz.title }}</td>
