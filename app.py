@@ -599,6 +599,7 @@ def admin_results():
         for r in results:
             writer.writerow([
                 r.student.username if r.student else 'N/A',
+                r.student.profile.full_name if r.student and r.student.profile else 'N/A',
                 r.quiz.course.name if r.quiz and r.quiz.course else 'N/A',
                 r.quiz.subject.name if r.quiz and r.quiz.subject else 'N/A',
                 r.quiz.title if r.quiz else 'N/A',
