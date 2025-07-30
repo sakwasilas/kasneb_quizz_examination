@@ -573,7 +573,7 @@ def admin_results():
     # Base query for results
     query = db.query(Result).join(Result.quiz).join(Quiz.course).join(Quiz.subject).options(
         joinedload(Result.quiz).joinedload(Quiz.subject),
-        joinedload(Result.student).joinedload(User.profile)
+        joinedload(Result.student).joinedload(User.profile),
         joinedload(Result.quiz).joinedload(Quiz.course),
         joinedload(Result.student)
     )
