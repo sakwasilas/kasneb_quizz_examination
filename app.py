@@ -108,21 +108,20 @@ def student_dashboard():
         )
 
     finally:
-        db.close()
-#______________admin dashboard__________________
 @app.route('/admin/dashboard')
 def admin_dashboard():
     if 'user_id' not in session or session.get('role') != 'admin':
-        flash('Admin access required. Please log in.', 'error')
+        flash('You must be logged in as an admin to access this page.', 'danger')
         return redirect(url_for('login'))
 
     db = SessionLocal()
     try:
         courses = db.query(Course).all()
+        quizzes = db.query(Quiz).all()
+        student_count = db.query(User).filter_by(role='student').count()
+        return render_template('admin/admin_dashboard.html', courses=courses, quizzes=quizzes, student_count=student_count)
     finally:
         db.close()
-
-    return render_template('admin/admin_dashboard.html', courses=courses)
 
 '-----------new student kinldy register-----------------'
 @app.route('/register', methods=['GET', 'POST'])

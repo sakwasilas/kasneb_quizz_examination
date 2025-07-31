@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Manage Students</title>
+  <meta charset="UTF-8" />
+  <title>Admin Dashboard</title>
   <style>
     body {
       margin: 0;
       font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-      background-color: #f4f6f8;
+      background: #f0f2f5;
       display: flex;
     }
 
@@ -41,48 +41,66 @@
       flex: 1;
     }
 
-    h1 {
+    .header {
       text-align: center;
-      color: #2c3e50;
       margin-bottom: 30px;
+    }
+
+    .header h1 {
+      color: #2c3e50;
+      font-size: 32px;
+    }
+
+    .section {
+      margin-bottom: 40px;
+    }
+
+    .section-title {
+      font-size: 20px;
+      margin-bottom: 15px;
+      color: #34495e;
+      border-left: 5px solid #3498db;
+      padding-left: 10px;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 20px;
+    }
+
+    .card {
+      background-color: #ffffff;
+      padding: 20px;
+      border-radius: 12px;
+      text-align: center;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+      text-decoration: none;
+      color: #2c3e50;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+      background-color: #f9f9f9;
     }
 
     table {
       width: 100%;
       border-collapse: collapse;
-      background: white;
-      border-radius: 8px;
-      overflow: hidden;
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+      margin-top: 20px;
     }
 
-    th, td {
-      padding: 12px 16px;
+    table th, table td {
+      padding: 10px;
       border: 1px solid #ccc;
       text-align: left;
     }
 
-    th {
+    table th {
       background-color: #3498db;
       color: white;
-    }
-
-    tr:nth-child(even) {
-      background-color: #f2f2f2;
-    }
-
-    .back-link {
-      display: inline-block;
-      margin-top: 20px;
-      text-decoration: none;
-      background-color: #3498db;
-      color: white;
-      padding: 10px 15px;
-      border-radius: 6px;
-    }
-
-    .back-link:hover {
-      background-color: #2980b9;
     }
 
     @media (max-width: 768px) {
@@ -97,6 +115,10 @@
         padding: 20px;
       }
 
+      .cards {
+        grid-template-columns: 1fr;
+      }
+
       table th, table td {
         font-size: 14px;
       }
@@ -107,44 +129,88 @@
 
   <!-- Sidebar -->
   <div class="sidebar">
-    <a href="{{ url_for('admin_dashboard') }}">Dashboard</a>
     <a href="{{ url_for('add_course') }}">Add Course</a>
     <a href="{{ url_for('add_subject') }}">Add Subject</a>
     <a href="{{ url_for('upload_exam') }}">Upload Quiz</a>
     <a href="{{ url_for('admin_results') }}">View Results</a>
+    <a href="{{ url_for('manage_students') }}">Manage Students</a>
     <a href="{{ url_for('logout') }}">Logout</a>
   </div>
 
   <!-- Main Content -->
   <div class="container">
-    <h1>Registered Students</h1>
+    <div class="header">
+      <h1>SUMMIT TECHNICAL COLLEGE</h1>
+    </div>
 
-    {% if students %}
-    <table>
-      <thead>
-        <tr>
-          <th>#</th>
-          <th>Username</th>
-          <th>Email</th>
-          <th>Role</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for student in students %}
-        <tr>
-          <td>{{ loop.index }}</td>
-          <td>{{ student.username }}</td>
-          <td>{{ student.email }}</td>
-          <td>{{ student.role }}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-    {% else %}
-      <p>No students found.</p>
-    {% endif %}
+    <!-- Course Section -->
+    <div class="section">
+      <div class="section-title">Course Management</div>
+      <div class="cards">
+        <a href="{{ url_for('add_course') }}" class="card">Add Course</a>
+      </div>
+    </div>
 
-    <a href="{{ url_for('admin_dashboard') }}" class="back-link">← Back to Dashboard</a>
+    <!-- Subject Management Section -->
+    <div class="section">
+      <div class="section-title">Subject Management</div>
+      <div class="cards">
+        <a href="{{ url_for('add_subject') }}" class="card">Add Subject</a>
+      </div>
+    </div>
+
+    <!-- Quiz Section -->
+    <div class="section">
+      <div class="section-title">Quiz Management</div>
+      <div class="cards">
+        <a href="{{ url_for('upload_exam') }}" class="card">Upload Quiz</a>
+      </div>
+
+      {% if quizzes %}
+      <table>
+        <thead>
+          <tr>
+            <th>Title</th>
+            <th>Course</th>
+            <th>Subject</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for quiz in quizzes %}
+          <tr>
+            <td>{{ quiz.title }}</td>
+            <td>{{ quiz.course.name }}</td>
+            <td>{{ quiz.subject.name }}</td>
+            <td>{{ quiz.status }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+        <p>No quizzes available.</p>
+      {% endif %}
+    </div>
+
+    <!-- Student Section -->
+    <div class="section">
+      <div class="section-title">Student Management</div>
+      <div class="cards">
+        <a href="{{ url_for('manage_students') }}" class="card">Manage Students</a>
+        <div class="card">
+          <h2>Total Students</h2>
+          <p>{{ student_count }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Results Section -->
+    <div class="section">
+      <div class="section-title">Results & Reports</div>
+      <div class="cards">
+        <a href="{{ url_for('admin_results') }}" class="card">View Results</a>
+      </div>
+    </div>
   </div>
 
 </body>
