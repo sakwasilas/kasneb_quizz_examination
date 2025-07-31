@@ -661,20 +661,19 @@ def delete_quiz(quiz_id):
     db = SessionLocal()
     try:
         quiz = db.query(Quiz).filter_by(id=quiz_id).first()
-        if not quiz:
-            flash('Quiz not found.', 'error')
-        else:
+        if quiz:
             db.delete(quiz)
             db.commit()
-            flash(f'Quiz "{quiz.title}" deleted successfully.', 'success')
+            flash(f'Quiz "{quiz.title}" has been deleted.', 'success')
+        else:
+            flash('Quiz not found.', 'error')
     except Exception as e:
         db.rollback()
-        flash(f'Error deleting quiz: {str(e)}', 'error')
+        flash(f'An error occurred: {e}', 'error')
     finally:
         db.close()
 
     return redirect(url_for('admin_dashboard'))
-   
     
 if __name__ == "__main__":
     app.run(debug=True)
