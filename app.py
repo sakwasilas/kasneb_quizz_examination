@@ -119,10 +119,14 @@ def admin_dashboard():
     db = SessionLocal()
     try:
         courses = db.query(Course).all()
+        quizzes = db.query(Quiz).options(
+            joinedload(Quiz.course),
+            joinedload(Quiz.subject)
+        ).order_by(Quiz.upload_time.desc()).all()
     finally:
         db.close()
 
-    return render_template('admin/admin_dashboard.html', courses=courses)
+    return render_template('admin/admin_dashboard.html', courses=courses, quizzes=quizzes)
 
 '-----------new student kinldy register-----------------'
 @app.route('/register', methods=['GET', 'POST'])
