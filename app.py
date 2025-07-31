@@ -71,13 +71,11 @@ def student_dashboard():
 
     db = SessionLocal()
     try:
-        # Fetch user
         user = db.query(User).filter_by(username=session['username']).first()
         if not user:
             flash("User not found.", "error")
             return redirect(url_for('logout'))
 
-  
         student_profile = db.query(StudentProfile).options(
             joinedload(StudentProfile.course)
         ).filter_by(user_id=user.id).first()
@@ -86,18 +84,14 @@ def student_dashboard():
             flash("Complete your profile before proceeding.", "warning")
             return redirect(url_for('complete_profile'))
 
-
         course_name = student_profile.course.name if student_profile.course else ''
 
-   
         available_quizzes = db.query(Quiz).filter_by(course_id=student_profile.course_id).all()
 
-      
         results = db.query(Result).join(Quiz).options(
             joinedload(Result.quiz).joinedload(Quiz.subject)
         ).filter(Result.student_id == user.id).all()
 
-       
         return render_template(
             'student/student_dashboard.html',
             profile=student_profile,
@@ -106,8 +100,8 @@ def student_dashboard():
             course_name=course_name,
             year=datetime.utcnow().year
         )
-
     finally:
+        db.close()
 #------admin dashboard______________
 @app.route('/admin/dashboard')
 def admin_dashboard():
