@@ -650,6 +650,30 @@ def logout():
     session.clear()
     flash("You have been logged out.", "info")
     return redirect(url_for('login'))
+
+#-----------admin delete ----
+@app.route('/admin/delete_quiz/<int:quiz_id>', methods=['POST'])
+def delete_quiz(quiz_id):
+    if 'user_id' not in session or session.get('role') != 'admin':
+        flash('Admin access required.', 'error')
+        return redirect(url_for('login'))
+
+    db = SessionLocal()
+    try:
+        quiz = db.query(Quiz).filter_by(id=quiz_id).first()
+        if not quiz:
+            flash('Quiz not found.', 'error')
+        else:
+            db.delete(quiz)
+            db.commit()
+            flash(f'Quiz "{quiz.title}" deleted successfully.', 'success')
+    except Exception as e:
+        db.rollback()
+        flash(f'Error deleting quiz: {str(e)}', 'error')
+    finally:
+        db.close()
+
+    return redirect(url_for('admin_dashboard'))
    
     
 if __name__ == "__main__":
