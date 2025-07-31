@@ -108,6 +108,7 @@ def student_dashboard():
         )
 
     finally:
+#------admin dashboard______________
 @app.route('/admin/dashboard')
 def admin_dashboard():
     if 'user_id' not in session or session.get('role') != 'admin':
