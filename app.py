@@ -262,7 +262,7 @@ def take_exam(quiz_id):
             flash(f'Exam submitted successfully. Your result: {round(score,2)}/50 ({round(percentage,2)}%)', 'success')
             return redirect(url_for('view_result', result_id=result.id))
 
-        return render_template('student/take_exam.html', quiz=quiz, questions=questions)
+        return render_template('student/take_exam.html', quiz=quiz, questions=questions,uration_minutes=quiz.duration)
 
     finally:
         db.close()
