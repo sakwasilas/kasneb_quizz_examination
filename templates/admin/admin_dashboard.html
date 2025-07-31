@@ -139,7 +139,6 @@
       color: white;
     }
 
-    /* Responsive Design */
     @media (max-width: 768px) {
       .sidebar {
         position: relative;
@@ -167,11 +166,11 @@
   <!-- Sidebar -->
   <div class="sidebar">
     <a href="{{ url_for('add_course') }}">Add Course</a>
-    <a href="{{ url_for('add_subject') }}">Add Subject</a> <!-- Link to Add Subject -->
+    <a href="{{ url_for('add_subject') }}">Add Subject</a>
     <a href="{{ url_for('upload_exam') }}">Upload Quiz</a>
-    <a href="{{ url_for('admin_results') }}">View Results</a> <!-- Link to View Results -->
+    <a href="{{ url_for('admin_results') }}">View Results</a>
     <a href="{{ url_for('manage_students') }}">Manage Students</a>
-    <a href="/logout">Logout</a>
+    <a href="{{ url_for('logout') }}">Logout</a>
   </div>
 
   <!-- Main Content -->
@@ -192,7 +191,7 @@
     <div class="section">
       <div class="section-title">Subject Management</div>
       <div class="cards">
-        <a href="{{ url_for('add_subject') }}" class="card">Add Subject</a> <!-- Link for managing subjects -->
+        <a href="{{ url_for('add_subject') }}" class="card">Add Subject</a>
       </div>
     </div>
 
@@ -239,8 +238,8 @@
     <div class="section">
       <div class="section-title">Student Management</div>
       <div class="cards">
-        <a href="/admin/manage-students" class="card">Manage Students</a>
-        <a href="/admin/students-count" class="card">View Student Count</a>
+        <a href="{{ url_for('manage_students') }}" class="card">Manage Students</a>
+        <a href="{{ url_for('student_count') }}" class="card">View Student Count</a>
       </div>
     </div>
 
@@ -248,6 +247,7 @@
     <div class="section">
       <div class="section-title">Results & Reports</div>
       <div class="cards">
+        <a href="{{ url_for('admin_results') }}" class="card">View Results</a>
       </div>
     </div>
   </div>
