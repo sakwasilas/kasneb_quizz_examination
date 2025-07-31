@@ -119,14 +119,10 @@ def admin_dashboard():
     db = SessionLocal()
     try:
         courses = db.query(Course).all()
-        quizzes = db.query(Quiz).options(
-            joinedload(Quiz.course),
-            joinedload(Quiz.subject)
-        ).order_by(Quiz.upload_time.desc()).all()
     finally:
         db.close()
 
-    return render_template('admin/admin_dashboard.html', courses=courses, quizzes=quizzes)
+    return render_template('admin/admin_dashboard.html', courses=courses)
 
 '-----------new student kinldy register-----------------'
 @app.route('/register', methods=['GET', 'POST'])
@@ -650,30 +646,7 @@ def logout():
     session.clear()
     flash("You have been logged out.", "info")
     return redirect(url_for('login'))
-
-#-----------admin delete ----
-@app.route('/admin/delete_quiz/<int:quiz_id>', methods=['POST'])
-def delete_quiz(quiz_id):
-    if 'user_id' not in session or session.get('role') != 'admin':
-        flash('Admin access required.', 'error')
-        return redirect(url_for('login'))
-
-    db = SessionLocal()
-    try:
-        quiz = db.query(Quiz).filter_by(id=quiz_id).first()
-        if quiz:
-            db.delete(quiz)
-            db.commit()
-            flash(f'Quiz "{quiz.title}" has been deleted.', 'success')
-        else:
-            flash('Quiz not found.', 'error')
-    except Exception as e:
-        db.rollback()
-        flash(f'An error occurred: {e}', 'error')
-    finally:
-        db.close()
-
-    return redirect(url_for('admin_dashboard'))
+   
     
 if __name__ == "__main__":
     app.run(debug=True)
