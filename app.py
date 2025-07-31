@@ -624,6 +624,23 @@ def admin_results():
                            selected_course=selected_course,
                            selected_subject=selected_subject)
 
+
+#_____________manage student____________________________
+
+@app.route('/admin/manage_students')
+def manage_students():
+    if 'user_id' not in session or session['role'] != 'admin':
+        flash('You must be logged in as an admin to access this page.', 'danger')
+        return redirect(url_for('login'))
+
+    db = SessionLocal()
+    try:
+        # Get all users with role 'student'
+        students = db.query(User).filter_by(role='student').all()
+        return render_template('admin/manage_students.html', students=students)
+    finally:
+        db.close()
+
 @app.route('/logout')
 def logout():
     session.clear()
