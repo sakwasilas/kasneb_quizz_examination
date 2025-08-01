@@ -117,7 +117,8 @@ def admin_dashboard():
     db = SessionLocal()
     try:
         
-        
+        courses = db.query(Course).all()
+        quizzes = db.query(Quiz).all()
         student_count = db.query(User).filter_by(role='student').count()
         return render_template('admin/admin_dashboard.html', courses=courses, quizzes=quizzes, student_count=student_count)
     finally:
