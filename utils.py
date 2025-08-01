@@ -42,7 +42,6 @@ def parse_docx_questions(file_stream, image_output_dir=DEFAULT_IMAGE_DIR):
     extra_html_parts = []
     image_counter = 0
     skipped = 0
-    found_first_question = False  # ✅ Flag to skip instructions before first question
 
     os.makedirs(image_output_dir, exist_ok=True)
 
@@ -61,7 +60,6 @@ def parse_docx_questions(file_stream, image_output_dir=DEFAULT_IMAGE_DIR):
 
         # ✅ New question starts
         if re.match(r"^\d+[\.\)]", text):
-            found_first_question = True
             if current_question:
                 current_question["extra_content"] = ''.join(extra_html_parts) if extra_html_parts else None
                 if current_question.get("question") and current_question.get("answer") in ["a", "b", "c", "d"]:
@@ -103,9 +101,8 @@ def parse_docx_questions(file_stream, image_output_dir=DEFAULT_IMAGE_DIR):
                     print("⚠️ Found answer but no current question defined.")
 
         # ✅ Any extra content like paragraph explanations
-        elif found_first_question:
+        else:
             extra_html_parts.append(f"<p>{text}</p>")
-        # ❌ Skip anything before first question (likely instructions)
 
     # ✅ After all paragraphs, save final question
     if current_question:
@@ -123,7 +120,7 @@ def parse_docx_questions(file_stream, image_output_dir=DEFAULT_IMAGE_DIR):
 
     print(f"✅ Parsed {len(questions)} valid questions.")
     if skipped > 0:
-        print(f"⚠️ Skipped {skipped} question(s) due to missing answers or invalid format.")
+        print(f" Skipped {skipped} question(s) due to missing answers or invalid format.")
 
     return questions
 

@@ -80,7 +80,7 @@ def student_dashboard():
             status='active'
         ).all()
 
-        # ✅ Get completed quizzes
+        # ✅ Get completed quizzes (i.e., results)
         completed_results = db.query(Result).filter_by(student_id=user.id).all()
         completed_quiz_ids = [result.quiz_id for result in completed_results]
 
@@ -106,7 +106,6 @@ def student_dashboard():
         )
     finally:
         db.close()
-
 # -------------------- Admin Dashboard --------------------
 @app.route('/admin/dashboard')
 def admin_dashboard():
@@ -208,31 +207,36 @@ def take_exam(quiz_id):
 
     db = SessionLocal()
     try:
+        # Fetch the quiz and its subject
         quiz = db.query(Quiz).filter_by(id=quiz_id).first()
         if not quiz or quiz.status != 'active':
             flash('This exam is not available.', 'danger')
             return redirect(url_for('student_dashboard'))
 
-        existing_result = db.query(Result).filter_by(
-            student_id=session['user_id'], quiz_id=quiz_id).first()
+        # Check if the student has already taken the quiz
+        existing_result = db.query(Result).filter_by(student_id=session['user_id'], quiz_id=quiz_id).first()
         if existing_result:
             flash('You have already taken this exam.', 'warning')
+            return redirect(url_for('student_dashboard'))  # Redirect to dashboard if already taken
+
+        questions = db.query(Question).filter_by(quiz_id=quiz_id).order_by(Question.id.asc()).all()
+
+        if not questions:
+            flash('No questions available for this quiz.', 'danger')
             return redirect(url_for('student_dashboard'))
 
-        # ✅ Ensure questions are shown in correct order (by ID)
-        questions = db.query(Question).filter_by(quiz_id=quiz_id).order_by(Question.id.asc()).all()
+        # Ensure you're passing the subject name as a string
+        subject_name = quiz.subject.name if quiz.subject else 'No Subject'
 
         return render_template(
             'student/take_exam.html',
             quiz=quiz,
             questions=questions,
+            subject_name=subject_name,  # Pass the subject name to the template
             duration_minutes=quiz.duration
         )
-
     finally:
         db.close()
-
-# -------------------- Submit Exam and Save Result --------------------
 @app.route('/submit_exam/<quiz_id>', methods=['POST'])
 def submit_exam(quiz_id):
     if 'username' not in session:
@@ -242,29 +246,23 @@ def submit_exam(quiz_id):
     db = SessionLocal()
     try:
         user = db.query(User).filter_by(username=session['username']).first()
-        student_profile = user.profile
-
-        if not student_profile:
-            flash("Complete your profile before proceeding.", "warning")
-            return redirect(url_for('complete_profile'))
-
         quiz = db.query(Quiz).filter_by(id=quiz_id).first()
-        if not quiz:
-            flash("Quiz not found.", "danger")
-            return redirect(url_for('student_dashboard'))
 
         answers = request.form
         total_score = 0
         total_marks = 0
 
+        # Calculate score based on selected answers
         for question in quiz.questions:
-            question_answer = answers.get(str(question.id))
+            question_answer = answers.get(f"q{question.id}")
             if question_answer == question.correct_option:
                 total_score += question.marks
             total_marks += question.marks
 
+        # Calculate percentage
         percentage = (total_score / total_marks) * 100 if total_marks else 0
 
+        # Save result in the database
         result = Result(
             student_id=user.id,
             quiz_id=quiz.id,
@@ -277,18 +275,24 @@ def submit_exam(quiz_id):
         db.commit()
 
         flash(f'You scored {total_score} out of {total_marks} ({percentage}%)', 'success')
-        return redirect(url_for('student_dashboard'))
+
+        # Redirect to the result page (results view)
+        return redirect(url_for('exam_results', quiz_id=quiz.id))  # Redirect to the result page
 
     except Exception as e:
-        db.rollback()
+        db.rollback()  # In case of any error, rollback the transaction
         flash(f"An error occurred: {str(e)}", "danger")
-        return redirect(url_for('student_dashboard'))
+        return redirect(url_for('student_dashboard'))  # Redirect to the dashboard on error
 
     finally:
         db.close()
 # -------------------- Admin Upload Exam --------------------
 @app.route('/admin/upload_exam', methods=['GET', 'POST'])
 def upload_exam():
+    if 'user_id' not in session or session.get('role') != 'admin':
+        flash('You must be logged in as an admin to access this page.', 'danger')
+        return redirect(url_for('login'))
+
     db = SessionLocal()
     courses = db.query(Course).all()
     subjects = db.query(Subject).all()
@@ -302,7 +306,6 @@ def upload_exam():
 
         if not file or not allowed_file(file.filename):
             flash('❌ Please upload a valid .docx file.', 'danger')
-            db.close()
             return redirect(request.url)
 
         filename = secure_filename(file.filename)
@@ -311,53 +314,49 @@ def upload_exam():
 
         try:
             with open(file_path, 'rb') as f:
-                questions_data = parse_docx_questions(f)  # Parsing docx questions
+                # Parsing the questions from the uploaded .docx file
+                questions_data = parse_docx_questions(f)
+
+            if not questions_data:  # Assuming questions_data is a list
+                flash("❌ No valid questions found in the document.", "danger")
+                return redirect(request.url)
+
+            quiz = Quiz(
+                title=title,
+                course_id=int(course_id),
+                subject_id=int(subject_id),
+                duration=int(duration),
+                status='active',
+                upload_time=datetime.utcnow()
+            )
+            db.add(quiz)
+            db.commit()
+            db.refresh(quiz)
+
+            saved_count = 0
+            for q in questions_data:  # If it's a list, directly loop over it
+                question = Question(
+                    quiz_id=quiz.id,
+                    question_text=q.get("question", ""),
+                    option_a=q.get("a", ""),
+                    option_b=q.get("b", ""),
+                    option_c=q.get("c", ""),
+                    option_d=q.get("d", ""),
+                    correct_option=q.get("answer", "").lower(),
+                    marks=q.get("marks", 1),
+                    extra_content=q.get("extra_content"),
+                    image=q.get("image")
+                )
+                db.add(question)
+                saved_count += 1
+
+            db.commit()
+            flash(f"✅ Uploaded quiz successfully with {saved_count} question(s).", "success")
+            return redirect(url_for('upload_exam'))
+
         except Exception as e:
             flash(f"❌ Failed to parse file: {str(e)}", "danger")
-            db.close()
             return redirect(request.url)
-
-        # Ensure we have valid questions data
-        if not questions_data.get('questions'):
-            flash("❌ No valid questions found in the document.", "danger")
-            db.close()
-            return redirect(request.url)
-
-        # Create new quiz entry
-        quiz = Quiz(
-            title=title,
-            course_id=int(course_id),
-            subject_id=int(subject_id),
-            duration=int(duration),
-            status='active',
-            upload_time=datetime.utcnow()
-        )
-
-        db.add(quiz)
-        db.commit()
-        db.refresh(quiz)
-
-        saved_count = 0
-        for q in questions_data['questions']:  # Correctly access the list of questions
-            question = Question(
-                quiz_id=quiz.id,
-                question_text=q.get("question", ""),
-                option_a=q.get("a", ""),
-                option_b=q.get("b", ""),
-                option_c=q.get("c", ""),
-                option_d=q.get("d", ""),
-                correct_option=q.get("answer", "").lower(),
-                marks=q.get("marks", 1),
-                extra_content=q.get("extra_content"),
-                image=q.get("image")
-            )
-            db.add(question)
-            saved_count += 1
-
-        db.commit()
-        flash(f"✅ Uploaded quiz successfully with {saved_count} question(s).", "success")
-        db.close()
-        return redirect(url_for('upload_exam'))
 
     db.close()
     return render_template('admin/upload_exams.html', courses=courses, subjects=subjects)
@@ -548,6 +547,26 @@ def toggle_quiz_status(quiz_id):
             quiz.status = 'active' if quiz.status == 'inactive' else 'inactive'
             db.commit()
         return redirect(url_for('admin_dashboard'))
+    finally:
+        db.close()
+#__________results___________________
+@app.route('/exam_results/<quiz_id>', methods=['GET'])
+def exam_results(quiz_id):
+    if 'username' not in session:
+        flash('Please log in first.', 'error')
+        return redirect(url_for('login'))
+
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter_by(username=session['username']).first()
+        result = db.query(Result).filter_by(student_id=user.id, quiz_id=quiz_id).first()
+
+        if not result:
+            flash("No result found for this exam.", "warning")
+            return redirect(url_for('student_dashboard'))
+
+        return render_template('student/exam_results.html', result=result)
+
     finally:
         db.close()
 

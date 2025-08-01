@@ -144,7 +144,7 @@
     <table>
         <thead>
             <tr>
-                <th>Subject</th>
+                <th>Quiz Title</th>
                 <th>Score</th>
                 <th>Total Marks</th>
                 <th>Percentage</th>
@@ -153,14 +153,14 @@
         <tbody>
             {% for result in results %}
                 <tr>
-                    <td>{{ result.quiz.subject.name }}</td>
+                    <td>{{ result.quiz.title }}</td>
                     <td>{{ result.score }} / {{ result.total_marks }}</td>
                     <td>{{ result.total_marks }}</td>
                     <td>{{ result.percentage }}%</td>
                 </tr>
             {% else %}
                 <tr>
-                    <td colspan="4">No results yet.</td>
+                    <td colspan="4">You have not taken any quizzes yet.</td>
                 </tr>
             {% endfor %}
         </tbody>
