@@ -248,12 +248,13 @@ def submit_exam(quiz_id):
         user = db.query(User).filter_by(username=session['username']).first()
         quiz = db.query(Quiz).filter_by(id=quiz_id).first()
 
+        if not quiz:
+            flash("Quiz not found.", "error")
+            return redirect(url_for('student_dashboard'))  # If quiz doesn't exist
+
         answers = request.form
         total_score = 0
         total_marks = 0
-
-        # Debug: Log answers received from the form
-        print(f"Received answers: {answers}")
 
         # Calculate score based on selected answers
         for question in quiz.questions:
@@ -264,9 +265,6 @@ def submit_exam(quiz_id):
 
         # Calculate percentage
         percentage = (total_score / total_marks) * 100 if total_marks else 0
-
-        # Debug: Log calculated result
-        print(f"Total score: {total_score}, Total marks: {total_marks}, Percentage: {percentage}")
 
         # Save result in the database
         result = Result(
@@ -279,6 +277,8 @@ def submit_exam(quiz_id):
 
         db.add(result)
         db.commit()
+
+        print(f"Result saved: {total_score} out of {total_marks} ({percentage}%)")  # Debug log
 
         flash(f'You scored {total_score} out of {total_marks} ({percentage}%)', 'success')
 
@@ -565,17 +565,20 @@ def exam_results(quiz_id):
     db = SessionLocal()
     try:
         user = db.query(User).filter_by(username=session['username']).first()
+
+        # Check if the result exists for the quiz
         result = db.query(Result).filter_by(student_id=user.id, quiz_id=quiz_id).first()
 
         if not result:
             flash("No result found for this exam.", "warning")
-            return redirect(url_for('student_dashboard'))
+            return redirect(url_for('student_dashboard'))  # Redirect to dashboard if no result found
+
+        print(f"Result found: {result.score} out of {result.total_marks}")  # Debug log
 
         return render_template('student/exam_results.html', result=result)
 
     finally:
         db.close()
-
 # -------------------- Logout --------------------
 @app.route('/logout')
 def logout():
