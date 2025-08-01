@@ -219,12 +219,15 @@ def take_exam(quiz_id, question_index):
         flash('You have completed the quiz!', 'success')
         return redirect(url_for('quiz_results', quiz_id=quiz_id))
 
+    # Enumerate the questions for display
+    questions = db.query(Question).filter_by(quiz_id=quiz_id).all()
+
     if request.method == 'POST':
-        # Handle answer submission and save result (you can add your logic here)
-        user_answer = request.form.get('answer')
-        
-        # Save the user's answer to the database or session
-        # e.g., db.session.add(new_answer) and db.session.commit()
+        # Handle answer submission and save result
+        for question in questions:
+            user_answer = request.form.get(f"question_{question.id}")
+            # Save the user's answer to the database or session (add your save logic here)
+            # Example: db.session.add(new_answer) and db.session.commit()
 
         # Move to the next question (increment question_index)
         next_question_index = question_index + 1
@@ -233,15 +236,12 @@ def take_exam(quiz_id, question_index):
         next_question = db.query(Question).filter_by(quiz_id=quiz_id).offset(next_question_index).first()
         
         if next_question:
-            # Redirect to the next question
             return redirect(url_for('take_exam', quiz_id=quiz_id, question_index=next_question_index))
         else:
             flash('You have completed the quiz!', 'success')
             return redirect(url_for('quiz_results', quiz_id=quiz_id))
 
-    # If it's a GET request, show the current question
-    return render_template('student/take_exam.html', quiz=quiz, question=current_question, question_index=question_index)
-
+    return render_template('student/take_exam.html', quiz=quiz, question_index=question_index, questions=questions, year=datetime.datetime.now().year)
 #-----------------student to view their results------------------------------------
 @app.route('/student/result/<int:result_id>')
 def view_result(result_id):
