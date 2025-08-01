@@ -232,7 +232,7 @@ def take_exam(quiz_id):
             return redirect(url_for('student_dashboard'))
 
         db.close()
-        return render_template('student/take_exam.html', quiz=quiz, questions=questions)
+        return render_template('student/take_exam.html', quiz=quiz, questions=questions, enumerate=enumerate)
     
     except Exception as e:
         db.close()
