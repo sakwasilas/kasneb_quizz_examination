@@ -51,7 +51,6 @@ def login():
             db.close()
     return render_template('login.html', error=error)
 
-# -------------------- Student Dashboard --------------------
 @app.route('/student/dashboard')
 def student_dashboard():
     if 'username' not in session or session.get('role') != 'student':
@@ -74,10 +73,27 @@ def student_dashboard():
             return redirect(url_for('complete_profile'))
 
         course_name = student_profile.course.name if student_profile.course else ''
-        available_quizzes = db.query(Quiz).filter_by(course_id=student_profile.course_id).all()
-        results = db.query(Result).join(Quiz).options(
-            joinedload(Result.quiz).joinedload(Quiz.subject)
-        ).filter(Result.student_id == user.id).all()
+
+        # ✅ Only show active quizzes
+        available_quizzes = db.query(Quiz).filter_by(
+            course_id=student_profile.course_id,
+            status='active'
+        ).all()
+
+        # ✅ Get completed quizzes
+        completed_results = db.query(Result).filter_by(student_id=user.id).all()
+        completed_quiz_ids = [result.quiz_id for result in completed_results]
+
+        # ✅ Prepare results for table display
+        results = []
+        for result in completed_results:
+            percentage = (result.score / result.total_marks) * 100 if result.total_marks else 0
+            results.append({
+                'quiz': result.quiz,
+                'score': result.score,
+                'total_marks': result.total_marks,
+                'percentage': round(percentage, 2)
+            })
 
         return render_template(
             'student/student_dashboard.html',
@@ -85,6 +101,7 @@ def student_dashboard():
             quizzes=available_quizzes,
             results=results,
             course_name=course_name,
+            completed_quiz_ids=completed_quiz_ids,
             year=datetime.utcnow().year
         )
     finally:
@@ -505,6 +522,22 @@ def manage_students():
     try:
         students = db.query(User).filter_by(role='student').all()
         return render_template('admin/manage_students.html', students=students)
+    finally:
+        db.close()
+
+#---------------------activate or deactivate quizz----------
+@app.route('/admin/toggle_quiz_status/<int:quiz_id>', methods=['POST'])
+def toggle_quiz_status(quiz_id):
+    if 'user_id' not in session or session.get('role') != 'admin':
+        return redirect(url_for('login'))
+
+    db = SessionLocal()
+    try:
+        quiz = db.query(Quiz).filter_by(id=quiz_id).first()
+        if quiz:
+            quiz.status = 'active' if quiz.status == 'inactive' else 'inactive'
+            db.commit()
+        return redirect(url_for('admin_dashboard'))
     finally:
         db.close()
 

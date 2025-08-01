@@ -53,6 +53,7 @@
             text-decoration: none;
             border-radius: 5px;
             transition: background-color 0.3s;
+            display: inline-block;
         }
 
         .btn-primary {
@@ -69,10 +70,7 @@
             background-color: #e74c3c;
             color: white;
             border: none;
-        }
-
-        .btn-danger:hover {
-            background-color: #c0392b;
+            cursor: not-allowed;
         }
 
         table {
@@ -101,6 +99,7 @@
             padding: 10px;
             background-color: #2c3e50;
             color: white;
+            text-align: center;
         }
 
         footer p {
@@ -122,12 +121,18 @@
     <h3>Available Exams</h3>
     <ul class="list-group">
         {% for quiz in quizzes %}
-            <li class="list-group-item">
-                <strong>{{ quiz.title }}</strong>
-                <p>Duration: {{ quiz.duration }} minutes</p>
-                <p>Status: {{ quiz.status }}</p>
-                <a href="{{ url_for('take_exam', quiz_id=quiz.id) }}" class="btn btn-primary">Take Exam</a>
-            </li>
+            {% if quiz.status == 'active' %}
+                <li class="list-group-item">
+                    <strong>{{ quiz.title }}</strong>
+                    <p>Duration: {{ quiz.duration }} minutes</p>
+                    {% set has_taken = quiz.id in completed_quiz_ids %}
+                    {% if has_taken %}
+                        <button class="btn btn-danger" disabled>Done</button>
+                    {% else %}
+                        <a href="{{ url_for('take_exam', quiz_id=quiz.id) }}" class="btn btn-primary">Take Exam</a>
+                    {% endif %}
+                </li>
+            {% endif %}
         {% else %}
             <li class="list-group-item">No available exams for your course.</li>
         {% endfor %}
@@ -136,7 +141,7 @@
     <hr>
 
     <h3>Your Results</h3>
-    <table class="table table-bordered">
+    <table>
         <thead>
             <tr>
                 <th>Subject</th>
@@ -167,7 +172,7 @@
 
     <hr>
 
-    <footer class="text-center">
+    <footer>
         <p>&copy; {{ year }} Summit Technical College</p>
     </footer>
 
