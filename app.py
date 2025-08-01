@@ -234,7 +234,7 @@ def take_exam(quiz_id, question_index):
         
         if next_question:
             # Redirect to the next question
-            return redirect(url_for('take_exam', quiz_id=quiz_id, question_index=next_question_index))
+            return redirect(url_for('student/take_exam', quiz_id=quiz_id, question_index=next_question_index))
         else:
             flash('You have completed the quiz!', 'success')
             return redirect(url_for('quiz_results', quiz_id=quiz_id))
