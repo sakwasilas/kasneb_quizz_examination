@@ -180,56 +180,64 @@ def complete_profile():
 # -------------------- Take Exam --------------------
 @app.route('/student/take_exam/<int:quiz_id>', methods=['GET', 'POST'])
 def take_exam(quiz_id):
-    if 'username' not in session:
-        flash('Please log in first.', 'error')
-        return redirect(url_for('login'))
+    try:
+        if 'username' not in session:
+            flash('Please log in first.', 'error')
+            return redirect(url_for('login'))
 
-    db = SessionLocal()
+        db = SessionLocal()
 
-    # Get the quiz and its questions
-    quiz = db.query(Quiz).filter_by(id=quiz_id).first()
+        # Get the quiz and its questions
+        quiz = db.query(Quiz).filter_by(id=quiz_id).first()
+        if not quiz:
+            flash('Quiz not found.', 'danger')
+            return redirect(url_for('student_dashboard'))
 
-    if not quiz:
-        flash('Quiz not found.', 'danger')
+        questions = db.query(Question).filter_by(quiz_id=quiz_id).all()
+        if not questions:
+            flash('No questions found for this quiz.', 'danger')
+            return redirect(url_for('student_dashboard'))
+
+        # Redirect to dashboard if the quiz is inactive
+        if quiz.status != 'active':
+            flash('This quiz is not active at the moment.', 'danger')
+            return redirect(url_for('student_dashboard'))
+
+        # If the form is submitted, calculate the score and percentage
+        if request.method == 'POST':
+            total_marks = 0
+            score = 0
+            for q in questions:
+                answer = request.form.get(f'question_{q.id}')
+                if answer and answer.lower() == q.correct_option.lower():
+                    score += q.marks
+                total_marks += q.marks
+
+            # Calculate percentage
+            percentage = (score / total_marks) * 100 if total_marks else 0
+
+            # Save the result
+            result = Result(
+                student_id=session['user_id'],
+                quiz_id=quiz.id,
+                score=score,
+                total_marks=total_marks,
+                percentage=percentage,
+                date_taken=datetime.utcnow()
+            )
+            db.add(result)
+            db.commit()
+
+            flash(f"Exam completed! Your score: {score}/{total_marks} ({percentage:.2f}%)", 'success')
+            return redirect(url_for('student_dashboard'))
+
+        db.close()
+        return render_template('student/take_exam.html', quiz=quiz, questions=questions)
+    
+    except Exception as e:
+        db.close()
+        flash(f"An error occurred: {str(e)}", 'danger')
         return redirect(url_for('student_dashboard'))
-
-    questions = db.query(Question).filter_by(quiz_id=quiz_id).all()
-
-    # Redirect to dashboard if the quiz is inactive
-    if quiz.status != 'active':
-        flash('This quiz is not active at the moment.', 'danger')
-        return redirect(url_for('student_dashboard'))
-
-    # If the form is submitted, calculate the score and percentage
-    if request.method == 'POST':
-        total_marks = 0
-        score = 0
-        for q in questions:
-            answer = request.form.get(f'question_{q.id}')
-            if answer and answer.lower() == q.correct_option.lower():
-                score += q.marks
-            total_marks += q.marks
-
-        # Calculate percentage
-        percentage = (score / total_marks) * 100 if total_marks else 0
-
-        # Save the result
-        result = Result(
-            student_id=session['user_id'],
-            quiz_id=quiz.id,
-            score=score,
-            total_marks=total_marks,
-            percentage=percentage,
-            date_taken=datetime.utcnow()
-        )
-        db.add(result)
-        db.commit()
-
-        flash(f"Exam completed! Your score: {score}/{total_marks} ({percentage:.2f}%)", 'success')
-        return redirect(url_for('student_dashboard'))
-
-    db.close()
-    return render_template('student/take_exam.html', quiz=quiz, questions=questions)
 @app.route('/submit_exam/<quiz_id>', methods=['POST'])
 def submit_exam(quiz_id):
     if 'username' not in session:
