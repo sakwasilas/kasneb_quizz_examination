@@ -1,4 +1,4 @@
-!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -125,7 +125,7 @@
                 <strong>{{ quiz.title }}</strong>
                 <p>Duration: {{ quiz.duration }} minutes</p>
                 <p>Status: {{ quiz.status }}</p>
-                <a href="{{ url_for('take_exam', quiz_id=quiz.id) }}" class="btn btn-primary">Take Exam</a>
+                <a href="{{ url_for('take_exam', quiz_id=quiz.id, question_index=0) }}" class="btn btn-primary">Take Exam</a>
             </li>
         {% else %}
             <li class="list-group-item">No available exams for your course.</li>
