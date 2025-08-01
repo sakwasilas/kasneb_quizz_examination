@@ -69,10 +69,10 @@ def student_dashboard():
 
     course_name = student_profile.course.name if student_profile.course else ''
 
-    # Fetch available quizzes for the student's course
+    # Fetch quizzes related to the student's course
     available_quizzes = db.query(Quiz).filter_by(course_id=student_profile.course_id).all()
 
-    # Fetch the student's quiz results
+    # Fetch the student's results
     results = db.query(Result).join(Quiz).options(joinedload(Result.quiz).joinedload(Quiz.subject)).filter(Result.student_id == user.id).all()
 
     db.close()  
