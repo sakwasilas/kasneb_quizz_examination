@@ -21,15 +21,15 @@
     <!-- Instructions Section -->
     <p><strong>Instructions:</strong> Please answer all questions. Navigate through the questions using the "Next" and "Previous" buttons. Only submit once you're done with all questions.</p>
 
-    <form method="POST" id="examForm">
+    <form method="POST" id="examForm" action="{{ url_for('submit_exam', quiz_id=quiz.id) }}">
         <div id="questionsContainer">
             {% for question in questions %}
                 <div class="question-box" style="display: none;" data-index="{{ loop.index0 }}">
-                    <p><strong>Question {{ loop.index + 1 }}:</strong> {{ question.question_text }}</p>
-                    <label><input type="radio" name="question_{{ question.id }}" value="A"> {{ question.option_a }}</label><br>
-                    <label><input type="radio" name="question_{{ question.id }}" value="B"> {{ question.option_b }}</label><br>
-                    <label><input type="radio" name="question_{{ question.id }}" value="C"> {{ question.option_c }}</label><br>
-                    <label><input type="radio" name="question_{{ question.id }}" value="D"> {{ question.option_d }}</label><br>
+                    <p><strong>Question {{ loop.index }}:</strong> {{ question.question_text }}</p>
+                    <label><input type="radio" name="question_{{ question.id }}" value="a"> {{ question.option_a }}</label><br>
+                    <label><input type="radio" name="question_{{ question.id }}" value="b"> {{ question.option_b }}</label><br>
+                    <label><input type="radio" name="question_{{ question.id }}" value="c"> {{ question.option_c }}</label><br>
+                    <label><input type="radio" name="question_{{ question.id }}" value="d"> {{ question.option_d }}</label><br>
                 </div>
             {% endfor %}
         </div>
@@ -60,7 +60,6 @@
         let minutes = Math.floor((timeRemaining % 3600) / 60);
         let seconds = timeRemaining % 60;
 
-        // Format time to hh:mm:ss
         timerElement.textContent = `Time Remaining: ${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
 
         if (timeRemaining <= 0) {
@@ -71,22 +70,19 @@
         }
     }
 
-    setInterval(updateTimer, 1000); // Update the timer every second
+    setInterval(updateTimer, 1000);
 
-    // Show the current question
     function showQuestion(index) {
         const questionDivs = document.querySelectorAll('.question-box');
         questionDivs.forEach((div, i) => {
             div.style.display = (i === index) ? 'block' : 'none';
         });
 
-        // Toggle visibility of buttons
         document.getElementById('prevBtn').style.display = (index === 0) ? 'none' : 'inline-block';
         document.getElementById('nextBtn').style.display = (index === totalQuestions - 1) ? 'none' : 'inline-block';
         document.getElementById('submitBtn').style.display = (index === totalQuestions - 1) ? 'inline-block' : 'none';
     }
 
-    // Move to the next question
     function nextQuestion() {
         if (currentIndex < totalQuestions - 1) {
             currentIndex++;
@@ -94,7 +90,6 @@
         }
     }
 
-    // Move to the previous question
     function prevQuestion() {
         if (currentIndex > 0) {
             currentIndex--;
@@ -103,7 +98,7 @@
     }
 
     window.onload = function () {
-        showQuestion(0); // Show first question
+        showQuestion(0);
     };
 </script>
 
