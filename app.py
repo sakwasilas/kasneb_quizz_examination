@@ -311,17 +311,19 @@ def upload_exam():
 
         try:
             with open(file_path, 'rb') as f:
-                questions_data = parse_docx_questions(f)
+                questions_data = parse_docx_questions(f)  # Parsing docx questions
         except Exception as e:
             flash(f"❌ Failed to parse file: {str(e)}", "danger")
             db.close()
             return redirect(request.url)
 
-        if not questions_data:
+        # Ensure we have valid questions data
+        if not questions_data.get('questions'):
             flash("❌ No valid questions found in the document.", "danger")
             db.close()
             return redirect(request.url)
 
+        # Create new quiz entry
         quiz = Quiz(
             title=title,
             course_id=int(course_id),
@@ -336,7 +338,7 @@ def upload_exam():
         db.refresh(quiz)
 
         saved_count = 0
-        for q in questions_data:
+        for q in questions_data['questions']:  # Correctly access the list of questions
             question = Question(
                 quiz_id=quiz.id,
                 question_text=q.get("question", ""),
