@@ -41,15 +41,16 @@ def parse_docx_questions(file_stream, image_output_dir=DEFAULT_IMAGE_DIR):
     current_question = None
     extra_html_parts = []
     image_counter = 0
+    question_number = 1
+    found_first_question = False
     skipped = 0
-    found_first_question = False  # Flag to skip instructions before first question
 
     os.makedirs(image_output_dir, exist_ok=True)
 
     for para in document.paragraphs:
         text = para.text.strip()
 
-        # Attach image to the current question
+        # Handle embedded images
         for run in para.runs:
             image_name = save_image_from_run(run, image_output_dir, image_counter + 1)
             if image_name and current_question:
@@ -59,27 +60,22 @@ def parse_docx_questions(file_stream, image_output_dir=DEFAULT_IMAGE_DIR):
         if not text:
             continue
 
-        # Skip any text before the first question (likely instructions)
-        if not found_first_question:
-            if re.match(r"^\d+[\.\)]", text):  # Match the first question pattern (e.g., "1." or "1)")
-                found_first_question = True
-
-        # New question starts (matches something like "1.", "2." etc.)
-        if found_first_question and re.match(r"^\d+[\.\)]", text):
+        # Detect question start
+        if re.match(rf"^{question_number}[\.\)]", text):
+            found_first_question = True
             if current_question:
                 current_question["extra_content"] = ''.join(extra_html_parts) if extra_html_parts else None
                 if current_question.get("question") and current_question.get("answer") in ["a", "b", "c", "d"]:
                     questions.append(current_question)
                 else:
                     skipped += 1
-                extra_html_parts = []
+            extra_html_parts = []
 
-            # Extract marks, e.g., (2mks) or (5 marks)
             marks_match = re.search(r"\((\d+)\s?(?:mks|marks?)\)", text, re.IGNORECASE)
             marks = int(marks_match.group(1)) if marks_match else 1
             clean_text = re.sub(r"\s*\(\d+\s?(?:mks|marks?)\)", "", text)
 
-            question_text = re.sub(r"^\d+[\.\)]\s*", "", clean_text)
+            question_text = re.sub(rf"^{question_number}[\.\)]\s*", "", clean_text)
             current_question = {
                 "question": question_text,
                 "a": "", "b": "", "c": "", "d": "",
@@ -88,29 +84,30 @@ def parse_docx_questions(file_stream, image_output_dir=DEFAULT_IMAGE_DIR):
                 "image": None,
                 "marks": marks
             }
+            question_number += 1
+            continue
 
-        # Option line (e.g., A., B., etc.)
-        elif re.match(r"^\(?[a-dA-D][\.\)]", text):
+        # Options A-D
+        if re.match(r"^\(?[a-dA-D][\.\)]", text) and current_question:
             match = re.match(r"^\(?([a-dA-D])[\.\)]\s*(.+)", text)
-            if match and current_question:
+            if match:
                 label = match.group(1).lower()
                 content = match.group(2).strip()
                 current_question[label] = content
+            continue
 
-        # Answer line (e.g., Answer: B)
-        elif re.match(r"^(answer|correct answer):", text, re.IGNORECASE):
+        # Answer line
+        if re.match(r"^(answer|correct answer):", text, re.IGNORECASE) and current_question:
             match = re.search(r":\s*([a-dA-D])", text, re.IGNORECASE)
             if match:
-                if current_question:
-                    current_question["answer"] = match.group(1).lower()
-                else:
-                    print("⚠️ Found answer but no current question defined.")
+                current_question["answer"] = match.group(1).lower()
+            continue
 
-        # Extra content, like explanations or notes
-        elif found_first_question:
+        # Extra explanation under the current question
+        if found_first_question:
             extra_html_parts.append(f"<p>{text}</p>")
 
-    # After all paragraphs, save the last question if available
+    # Final question
     if current_question:
         current_question["extra_content"] = ''.join(extra_html_parts) if extra_html_parts else None
         if current_question.get("question") and current_question.get("answer") in ["a", "b", "c", "d"]:
@@ -118,7 +115,7 @@ def parse_docx_questions(file_stream, image_output_dir=DEFAULT_IMAGE_DIR):
         else:
             skipped += 1
 
-    # Process tables at the end, and attach them to the last question
+    # Handle tables if any (append to last question)
     for table in document.tables:
         if current_question:
             table_html = extract_table_html(table)
@@ -126,6 +123,11 @@ def parse_docx_questions(file_stream, image_output_dir=DEFAULT_IMAGE_DIR):
 
     print(f"✅ Parsed {len(questions)} valid questions.")
     if skipped > 0:
-        print(f"⚠️ Skipped {skipped} question(s) due to missing answers or invalid format.")
+        print(f"⚠️ Skipped {skipped} question(s) due to missing options or answers.")
 
     return questions
+
+def get_quiz_status(session, quiz_id, student_id):
+    from models import Result
+    result = session.query(Result).filter_by(quiz_id=quiz_id, student_id=student_id).first()
+    return 'Completed' if result else 'Pending'
