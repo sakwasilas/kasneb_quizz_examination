@@ -42,7 +42,7 @@ def parse_docx_questions(file_stream, image_output_dir=DEFAULT_IMAGE_DIR):
     extra_html_parts = []
     image_counter = 0
     skipped = 0
-    found_first_question = False  # ✅ Flag to skip instructions before first question
+    found_first_question = False  # Flag to skip instructions before first question
 
     os.makedirs(image_output_dir, exist_ok=True)
 
@@ -59,9 +59,13 @@ def parse_docx_questions(file_stream, image_output_dir=DEFAULT_IMAGE_DIR):
         if not text:
             continue
 
-        # ✅ New question starts
-        if re.match(r"^\d+[\.\)]", text):
-            found_first_question = True
+        # Skip any text before the first question (likely instructions)
+        if not found_first_question:
+            if re.match(r"^\d+[\.\)]", text):  # Match the first question pattern (e.g., "1." or "1)")
+                found_first_question = True
+
+        # New question starts (matches something like "1.", "2." etc.)
+        if found_first_question and re.match(r"^\d+[\.\)]", text):
             if current_question:
                 current_question["extra_content"] = ''.join(extra_html_parts) if extra_html_parts else None
                 if current_question.get("question") and current_question.get("answer") in ["a", "b", "c", "d"]:
@@ -70,7 +74,7 @@ def parse_docx_questions(file_stream, image_output_dir=DEFAULT_IMAGE_DIR):
                     skipped += 1
                 extra_html_parts = []
 
-            # Extract (2mks) or (5 marks)
+            # Extract marks, e.g., (2mks) or (5 marks)
             marks_match = re.search(r"\((\d+)\s?(?:mks|marks?)\)", text, re.IGNORECASE)
             marks = int(marks_match.group(1)) if marks_match else 1
             clean_text = re.sub(r"\s*\(\d+\s?(?:mks|marks?)\)", "", text)
@@ -85,7 +89,7 @@ def parse_docx_questions(file_stream, image_output_dir=DEFAULT_IMAGE_DIR):
                 "marks": marks
             }
 
-        # ✅ Option line (A., B., etc.)
+        # Option line (e.g., A., B., etc.)
         elif re.match(r"^\(?[a-dA-D][\.\)]", text):
             match = re.match(r"^\(?([a-dA-D])[\.\)]\s*(.+)", text)
             if match and current_question:
@@ -93,7 +97,7 @@ def parse_docx_questions(file_stream, image_output_dir=DEFAULT_IMAGE_DIR):
                 content = match.group(2).strip()
                 current_question[label] = content
 
-        # ✅ Answer line (e.g., Answer: B)
+        # Answer line (e.g., Answer: B)
         elif re.match(r"^(answer|correct answer):", text, re.IGNORECASE):
             match = re.search(r":\s*([a-dA-D])", text, re.IGNORECASE)
             if match:
@@ -102,12 +106,11 @@ def parse_docx_questions(file_stream, image_output_dir=DEFAULT_IMAGE_DIR):
                 else:
                     print("⚠️ Found answer but no current question defined.")
 
-        # ✅ Any extra content like paragraph explanations
+        # Extra content, like explanations or notes
         elif found_first_question:
             extra_html_parts.append(f"<p>{text}</p>")
-        # ❌ Skip anything before first question (likely instructions)
 
-    # ✅ After all paragraphs, save final question
+    # After all paragraphs, save the last question if available
     if current_question:
         current_question["extra_content"] = ''.join(extra_html_parts) if extra_html_parts else None
         if current_question.get("question") and current_question.get("answer") in ["a", "b", "c", "d"]:
@@ -115,7 +118,7 @@ def parse_docx_questions(file_stream, image_output_dir=DEFAULT_IMAGE_DIR):
         else:
             skipped += 1
 
-    # ✅ Process tables at the end
+    # Process tables at the end, and attach them to the last question
     for table in document.tables:
         if current_question:
             table_html = extract_table_html(table)
@@ -126,8 +129,3 @@ def parse_docx_questions(file_stream, image_output_dir=DEFAULT_IMAGE_DIR):
         print(f"⚠️ Skipped {skipped} question(s) due to missing answers or invalid format.")
 
     return questions
-
-def get_quiz_status(session, quiz_id, student_id):
-    from models import Result
-    result = session.query(Result).filter_by(quiz_id=quiz_id, student_id=student_id).first()
-    return 'Completed' if result else 'Pending'
