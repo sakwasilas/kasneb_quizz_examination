@@ -246,27 +246,30 @@ def submit_exam(quiz_id):
     db = SessionLocal()
     try:
         user = db.query(User).filter_by(username=session['username']).first()
+        student_profile = user.profile
+
+        if not student_profile:
+            flash("Complete your profile before proceeding.", "warning")
+            return redirect(url_for('complete_profile'))
+
         quiz = db.query(Quiz).filter_by(id=quiz_id).first()
 
         if not quiz:
-            flash("Quiz not found.", "error")
+            flash("Quiz not found.", "danger")
             return redirect(url_for('student_dashboard'))
 
         answers = request.form
         total_score = 0
         total_marks = 0
 
-        # Calculate score based on selected answers
         for question in quiz.questions:
-            question_answer = answers.get(f"q{question.id}")
+            question_answer = answers.get(f"question_{question.id}")
             if question_answer == question.correct_option:
                 total_score += question.marks
             total_marks += question.marks
 
-        # Calculate percentage
         percentage = (total_score / total_marks) * 100 if total_marks else 0
 
-        # Save result in the database
         result = Result(
             student_id=user.id,
             quiz_id=quiz.id,
@@ -280,13 +283,11 @@ def submit_exam(quiz_id):
 
         flash(f'You scored {total_score} out of {total_marks} ({percentage}%)', 'success')
 
-        return redirect(url_for('exam_results', quiz_id=quiz.id))  # Redirect to result page
-
+        return redirect(url_for('student_dashboard'))
     except Exception as e:
-        db.rollback()  # In case of any error, rollback the transaction
+        db.rollback()
         flash(f"An error occurred: {str(e)}", "danger")
-        return redirect(url_for('student_dashboard'))  # Redirect to dashboard on error
-
+        return redirect(url_for('student_dashboard'))
     finally:
         db.close()
 # -------------------- Admin Upload Exam --------------------
