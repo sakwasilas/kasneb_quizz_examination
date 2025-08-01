@@ -199,7 +199,7 @@ def complete_profile():
     return render_template('student/complete_profile.html', courses=courses, student_profile=student_profile)
 
 # -------------------- Take Exam --------------------
-@app.route('/student/take_exam/<int:quiz_id>', methods=['GET', 'POST'])
+@app.route('/student/take_exam/<quiz_id>', methods=['GET', 'POST'])
 def take_exam(quiz_id):
     if 'username' not in session:
         flash('Please log in first.', 'error')
@@ -207,26 +207,38 @@ def take_exam(quiz_id):
 
     db = SessionLocal()
     try:
-        # Fetch the quiz and its subject
+        user = db.query(User).filter_by(username=session['username']).first()
         quiz = db.query(Quiz).filter_by(id=quiz_id).first()
-        if not quiz or quiz.status != 'active':
-            flash('This exam is not available.', 'danger')
+
+        if not quiz:
+            flash("Quiz not found.", "danger")
             return redirect(url_for('student_dashboard'))
 
-        # Check if the student has already taken the quiz
-        existing_result = db.query(Result).filter_by(student_id=session['user_id'], quiz_id=quiz_id).first()
-        if existing_result:
-            flash('You have already taken this exam.', 'warning')
-            return redirect(url_for('student_dashboard'))  # Redirect to dashboard if already taken
+        total_questions = len(quiz.questions)
+        current_question_index = request.args.get('question_index', 0, type=int)
 
-        questions = db.query(Question).filter_by(quiz_id=quiz_id).order_by(Question.id.asc()).all()
+        # Make sure the index is within bounds
+        if current_question_index < 0:
+            current_question_index = 0
+        elif current_question_index >= total_questions:
+            current_question_index = total_questions - 1
 
-        if not questions:
-            flash('No questions available for this quiz.', 'danger')
-            return redirect(url_for('student_dashboard'))
+        # Get the current question based on the index
+        question = quiz.questions[current_question_index]
 
-        # Ensure you're passing the subject name as a string
-        subject_name = quiz.subject.name if quiz.subject else 'No Subject'
+        return render_template(
+            'student/take_exam.html',
+            quiz=quiz,
+            question=question,
+            current_question_index=current_question_index,
+            total=total_questions,
+            duration_minutes=quiz.duration // 60
+        )
+    except Exception as e:
+        flash(f"An error occurred: {str(e)}", "danger")
+        return redirect(url_for('student_dashboard'))
+    finally:
+        db.close()
 
         return render_template(
             'student/take_exam.html',
