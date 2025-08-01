@@ -199,6 +199,7 @@ def complete_profile():
     return render_template('student/complete_profile.html', courses=courses, student_profile=student_profile)
 
 # -------------------- Take Exam --------------------
+from datetime import datetime
 @app.route('/student/take_exam/<int:quiz_id>/<int:question_index>', methods=['GET', 'POST'])
 def take_exam(quiz_id, question_index):
     db = SessionLocal()
