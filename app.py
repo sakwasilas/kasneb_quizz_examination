@@ -203,71 +203,44 @@ def complete_profile():
 def take_exam(quiz_id, question_index):
     db = SessionLocal()
 
+    # Get the quiz from the database
     quiz = db.query(Quiz).filter_by(id=quiz_id).first()
 
+    # Check if the quiz exists and is active
     if not quiz or quiz.status != 'active':
         flash("This exam is not available", "danger")
         return redirect(url_for('student_dashboard'))
 
-    if 'student_id' not in session:
-        flash("Please log in to access the quiz.", "warning")
-        return redirect(url_for('login'))
+    # Get the current question based on the question_index
+    current_question = db.query(Question).filter_by(quiz_id=quiz_id).offset(question_index).first()
 
-    student_id = session['student_id']
+    # If the current question doesn't exist, quiz might be completed
+    if not current_question:
+        flash('You have completed the quiz!', 'success')
+        return redirect(url_for('quiz_results', quiz_id=quiz_id))
 
-    # Prevent retaking the quiz
-    existing_result = db.query(Result).filter_by(student_id=student_id, quiz_id=quiz_id).first()
-    if existing_result:
-        flash("You have already completed this quiz.", "warning")
-        return redirect(url_for('student_results'))
-
-    # Get questions for this quiz
-    questions = db.query(Question).filter_by(quiz_id=quiz_id).all()
-    total = len(questions)
-
-    if total == 0:
-        flash("This quiz has no questions.", "warning")
-        return redirect(url_for('student_dashboard'))
-
-    # Handle POST request (answer submission)
     if request.method == 'POST':
-        selected_answer = request.form.get(f'question_{questions[question_index].id}')
-        if selected_answer:
-            # Add the answer to the session
-            if 'answers' not in session:
-                session['answers'] = {}
+        # Handle answer submission and save result (you can add your logic here)
+        user_answer = request.form.get('answer')
+        
+        # Save the user's answer to the database or session
+        # e.g., db.session.add(new_answer) and db.session.commit()
 
-            session['answers'][questions[question_index].id] = selected_answer
+        # Move to the next question (increment question_index)
+        next_question_index = question_index + 1
+        
+        # Check if the next question exists, otherwise, end the quiz
+        next_question = db.query(Question).filter_by(quiz_id=quiz_id).offset(next_question_index).first()
+        
+        if next_question:
+            # Redirect to the next question
+            return redirect(url_for('take_exam', quiz_id=quiz_id, question_index=next_question_index))
+        else:
+            flash('You have completed the quiz!', 'success')
+            return redirect(url_for('quiz_results', quiz_id=quiz_id))
 
-        # Move to the next question or submit the quiz
-        if question_index + 1 >= total:
-            flash("You have completed the quiz.", "success")
-            # Calculate score here and create Result
-            score = 0
-            total_marks = 0
-            for question_id, answer in session['answers'].items():
-                question = db.query(Question).filter_by(id=question_id).first()
-                if question.correct_option == answer:
-                    score += question.marks
-                total_marks += question.marks
-
-            # Create result record
-            result = Result(
-                student_id=student_id,
-                quiz_id=quiz_id,
-                score=score,
-                total_marks=total_marks,
-                percentage=(score / total_marks) * 100 if total_marks else 0,
-                taken_on=datetime.utcnow()  # Store the timestamp for the exam
-            )
-            db.add(result)
-            db.commit()
-
-            session.pop('answers', None)  # Clear session answers
-
-            return redirect(url_for('student_results'))
-
-        return redirect(url_for('take_exam', quiz_id=quiz_id, question_index=question_index + 1))
+    # If it's a GET request, show the current question
+    return render_template('take_exam.html', quiz=quiz, question=current_question, question_index=question_index)
 
     # For GET request, show the current question
     question = questions[question_index]
