@@ -34,11 +34,11 @@
     margin-bottom: 25px;
     padding-bottom: 15px;
     border-bottom: 1px solid #e0e0e0;
-    display: none; /* Hide all questions initially */
+    display: none;
   }
 
   .question-block.active {
-    display: block; /* Only show the active question */
+    display: block;
   }
 
   .question-block p {
@@ -129,7 +129,7 @@
     // Show or hide navigation buttons
     document.getElementById('prevBtn').style.display = (index === 0) ? 'none' : 'inline-block';
     document.getElementById('nextBtn').style.display = (index === totalQuestions - 1) ? 'none' : 'inline-block';
-    document.getElementById('submitBtn').style.display = (index === totalQuestions - 1) ? 'inline-block' : 'none';
+    document.getElementById('submitBtn').style.display = (index === totalQuestions - 1) ? 'inline-block' : 'none'; // Show submit on last question
   }
 
   // Next question handler
@@ -174,15 +174,19 @@
   // Automatically submit the form when the time is up
   function updateTimer() {
     const timerElement = document.getElementById("timer");
-    let totalSeconds = {{ quiz.duration }} * 60;
+    let totalSeconds = {{ duration_minutes }} * 60;
 
-    if (totalSeconds <= 0) {
-      document.getElementById("quizForm").submit();  // Auto-submit
-    } else {
-      timerElement.textContent = formatTime(totalSeconds);
-      totalSeconds--;
-      setTimeout(updateTimer, 1000);
+    function tick() {
+      if (totalSeconds <= 0) {
+        document.getElementById("quizForm").submit();  // Auto-submit the form
+      } else {
+        timerElement.textContent = formatTime(totalSeconds);
+        totalSeconds--;
+        setTimeout(tick, 1000);  // Continue ticking every second
+      }
     }
+
+    tick();  // Start the countdown
   }
 
   function formatTime(seconds) {

@@ -250,7 +250,7 @@ def submit_exam(quiz_id):
 
         if not quiz:
             flash("Quiz not found.", "error")
-            return redirect(url_for('student_dashboard'))  # If quiz doesn't exist
+            return redirect(url_for('student_dashboard'))
 
         answers = request.form
         total_score = 0
@@ -278,17 +278,14 @@ def submit_exam(quiz_id):
         db.add(result)
         db.commit()
 
-        print(f"Result saved: {total_score} out of {total_marks} ({percentage}%)")  # Debug log
-
         flash(f'You scored {total_score} out of {total_marks} ({percentage}%)', 'success')
 
-        # Redirect to the result page (results view)
-        return redirect(url_for('exam_results', quiz_id=quiz.id))  # Redirect to the result page
+        return redirect(url_for('exam_results', quiz_id=quiz.id))  # Redirect to result page
 
     except Exception as e:
         db.rollback()  # In case of any error, rollback the transaction
         flash(f"An error occurred: {str(e)}", "danger")
-        return redirect(url_for('student_dashboard'))  # Redirect to the dashboard on error
+        return redirect(url_for('student_dashboard'))  # Redirect to dashboard on error
 
     finally:
         db.close()
