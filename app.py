@@ -219,8 +219,15 @@ def take_exam(quiz_id):
             flash('You have already taken this exam.', 'warning')
             return redirect(url_for('student_dashboard'))
 
-        questions = db.query(Question).filter_by(quiz_id=quiz_id).all()
-        return render_template('student/take_exam.html', quiz=quiz, questions=questions, duration_minutes=quiz.duration)
+        # ✅ Ensure questions are shown in correct order (by ID)
+        questions = db.query(Question).filter_by(quiz_id=quiz_id).order_by(Question.id.asc()).all()
+
+        return render_template(
+            'student/take_exam.html',
+            quiz=quiz,
+            questions=questions,
+            duration_minutes=quiz.duration
+        )
 
     finally:
         db.close()
