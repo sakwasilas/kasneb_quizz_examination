@@ -239,16 +239,6 @@ def take_exam(quiz_id):
         return redirect(url_for('student_dashboard'))
     finally:
         db.close()
-
-        return render_template(
-            'student/take_exam.html',
-            quiz=quiz,
-            questions=questions,
-            subject_name=subject_name,  # Pass the subject name to the template
-            duration_minutes=quiz.duration
-        )
-    finally:
-        db.close()
 @app.route('/submit_exam/<quiz_id>', methods=['POST'])
 def submit_exam(quiz_id):
     if 'username' not in session:
