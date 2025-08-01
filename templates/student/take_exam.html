@@ -44,12 +44,6 @@
             margin-right: 10px;
         }
 
-        .timer {
-            font-size: 1.2em;
-            text-align: right;
-            color: red;
-        }
-
         .btn {
             padding: 10px 20px;
             font-size: 1em;
@@ -69,6 +63,16 @@
             background-color: #2980b9;
         }
 
+        .btn-secondary {
+            background-color: #95a5a6;
+            color: white;
+            border: none;
+        }
+
+        .btn-secondary:hover {
+            background-color: #7f8c8d;
+        }
+
         footer {
             margin-top: 40px;
             padding: 10px;
@@ -86,7 +90,6 @@
 <body>
 
     <h2>Taking Exam: {{ quiz.title }}</h2>
-    <div class="timer" id="timer">Time left: 120:00</div>
 
     <form method="POST">
         {% for index, question in enumerate(questions) %}
@@ -107,27 +110,8 @@
     </form>
 
     <footer>
-        <p>&copy; {{ year }} Summit Technical College</p>
+        <p>&copy; Summit Technical College</p>
     </footer>
-
-    <script>
-        let timeLeft = 120 * 60; // 2 hours in seconds
-        const timerElement = document.getElementById("timer");
-
-        function updateTimer() {
-            let minutes = Math.floor(timeLeft / 60);
-            let seconds = timeLeft % 60;
-            timerElement.textContent = `Time left: ${minutes}:${seconds < 10 ? '0' + seconds : seconds}`;
-
-            if (timeLeft === 0) {
-                document.querySelector('form').submit(); // Auto-submit the form when time is up
-            } else {
-                timeLeft--;
-            }
-        }
-
-        setInterval(updateTimer, 1000);
-    </script>
 
 </body>
 </html>

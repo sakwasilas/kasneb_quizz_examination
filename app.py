@@ -222,23 +222,26 @@ def take_exam(quiz_id, question_index):
         return redirect(url_for('quiz_results', quiz_id=quiz_id))
 
     if request.method == 'POST':
-       
+        # Handle answer submission and save result (you can add your logic here)
         user_answer = request.form.get('answer')
         
-      
+        # Save the user's answer to the database or session
+        # e.g., db.session.add(new_answer) and db.session.commit()
+
+        # Move to the next question (increment question_index)
         next_question_index = question_index + 1
         
-        
+        # Check if the next question exists, otherwise, end the quiz
         next_question = db.query(Question).filter_by(quiz_id=quiz_id).offset(next_question_index).first()
         
         if next_question:
-       
+            # Redirect to the next question
             return redirect(url_for('student/take_exam', quiz_id=quiz_id, question_index=next_question_index))
         else:
             flash('You have completed the quiz!', 'success')
             return redirect(url_for('quiz_results', quiz_id=quiz_id))
 
-  
+    # For GET request, show the current question
     return render_template('student/take_exam.html', quiz=quiz, question_index=question_index, questions=questions)
 #-----------------student to view their results------------------------------------
 @app.route('/student/result/<int:result_id>')
