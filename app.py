@@ -200,6 +200,7 @@ def complete_profile():
 
 # -------------------- Take Exam --------------------
 from datetime import datetime
+
 @app.route('/student/take_exam/<int:quiz_id>/<int:question_index>', methods=['GET', 'POST'])
 def take_exam(quiz_id, question_index):
     db = SessionLocal()
@@ -220,29 +221,25 @@ def take_exam(quiz_id, question_index):
         flash('You have completed the quiz!', 'success')
         return redirect(url_for('quiz_results', quiz_id=quiz_id))
 
-    # Enumerate the questions for display
-    questions = db.query(Question).filter_by(quiz_id=quiz_id).all()
-
     if request.method == 'POST':
-        # Handle answer submission and save result
-        for question in questions:
-            user_answer = request.form.get(f"question_{question.id}")
-            # Save the user's answer to the database or session (add your save logic here)
-            # Example: db.session.add(new_answer) and db.session.commit()
-
-        # Move to the next question (increment question_index)
+       
+        user_answer = request.form.get('answer')
+        
+      
         next_question_index = question_index + 1
         
-        # Check if the next question exists, otherwise, end the quiz
+        
         next_question = db.query(Question).filter_by(quiz_id=quiz_id).offset(next_question_index).first()
         
         if next_question:
-            return redirect(url_for('take_exam', quiz_id=quiz_id, question_index=next_question_index))
+       
+            return redirect(url_for('student/take_exam', quiz_id=quiz_id, question_index=next_question_index))
         else:
             flash('You have completed the quiz!', 'success')
             return redirect(url_for('quiz_results', quiz_id=quiz_id))
 
-    return render_template('student/take_exam.html', quiz=quiz, question_index=question_index, questions=questions, year=datetime.datetime.now().year)
+  
+    return render_template('student/take_exam.html', quiz=quiz, question_index=question_index, questions=questions)
 #-----------------student to view their results------------------------------------
 @app.route('/student/result/<int:result_id>')
 def view_result(result_id):
