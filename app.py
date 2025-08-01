@@ -252,6 +252,9 @@ def submit_exam(quiz_id):
         total_score = 0
         total_marks = 0
 
+        # Debug: Log answers received from the form
+        print(f"Received answers: {answers}")
+
         # Calculate score based on selected answers
         for question in quiz.questions:
             question_answer = answers.get(f"q{question.id}")
@@ -261,6 +264,9 @@ def submit_exam(quiz_id):
 
         # Calculate percentage
         percentage = (total_score / total_marks) * 100 if total_marks else 0
+
+        # Debug: Log calculated result
+        print(f"Total score: {total_score}, Total marks: {total_marks}, Percentage: {percentage}")
 
         # Save result in the database
         result = Result(
