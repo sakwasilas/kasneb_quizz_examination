@@ -234,18 +234,13 @@ def take_exam(quiz_id, question_index):
         
         if next_question:
             # Redirect to the next question
-            return redirect(url_for('student/take_exam', quiz_id=quiz_id, question_index=next_question_index))
+            return redirect(url_for('take_exam', quiz_id=quiz_id, question_index=next_question_index))
         else:
             flash('You have completed the quiz!', 'success')
             return redirect(url_for('quiz_results', quiz_id=quiz_id))
 
     # If it's a GET request, show the current question
     return render_template('student/take_exam.html', quiz=quiz, question=current_question, question_index=question_index)
-
-    # For GET request, show the current question
-    question = questions[question_index]
-    return render_template('student/take_exam.html', quiz=quiz, question=question,
-                           current_question_index=question_index, questions=questions, total=total)
 
 #-----------------student to view their results------------------------------------
 @app.route('/student/result/<int:result_id>')
