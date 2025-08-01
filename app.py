@@ -199,44 +199,83 @@ def complete_profile():
     return render_template('student/complete_profile.html', courses=courses, student_profile=student_profile)
 
 # -------------------- Take Exam --------------------
-@app.route('/student/take_exam/<quiz_id>', methods=['GET', 'POST'])
-def take_exam(quiz_id):
+@app.route('/student/take_exam/<int:quiz_id>/<int:question_index>', methods=['GET', 'POST'])
+def take_exam(quiz_id, question_index):
+    db = SessionLocal()
+    
+    quiz = db.query(Quiz).filter_by(id=quiz_id).first()
+    
+    if not quiz or quiz.status != 'active':
+        flash("This exam is not available", "danger")
+        return redirect(url_for('student_dashboard'))
+
+    if 'student_id' not in session:
+        flash("Please log in to access the quiz.", "warning")
+        return redirect(url_for('login'))
+
+    student_id = session['student_id']
+    
+    # Prevent retaking the quiz
+    existing_result = db.query(Result).filter_by(student_id=student_id, quiz_id=quiz_id).first()
+    if existing_result:
+        flash("You have already completed this quiz.", "warning")
+        return redirect(url_for('student_results'))
+
+    # Get questions for this quiz
+    questions = db.query(Question).filter_by(quiz_id=quiz_id).all()
+    total = len(questions)
+    
+    if total == 0:
+        flash("This quiz has no questions.", "warning")
+        return redirect(url_for('student_dashboard'))
+
+    # Handle POST request (answer submission)
+    if request.method == 'POST':
+        selected_answer = request.form.get(f'question_{questions[question_index].id}')
+        if selected_answer:
+            current_question = questions[question_index]
+            is_correct = (selected_answer == current_question.correct_option)
+            result = Result(
+                student_id=student_id,
+                quiz_id=quiz_id,
+                score=current_question.marks if is_correct else 0,
+                total_marks=current_question.marks,
+                percentage=(current_question.marks if is_correct else 0) / current_question.marks * 100 if current_question.marks > 0 else 0,
+                taken_on=datetime.utcnow()  # Store the timestamp for the exam
+            )
+            db.add(result)
+            db.commit()
+
+        # Move to the next question or submit the quiz
+        if question_index + 1 >= total:
+            flash("You have completed the quiz.", "success")
+            return redirect(url_for('student_results'))
+
+        return redirect(url_for('take_exam', quiz_id=quiz_id, question_index=question_index + 1))
+
+    question = questions[question_index]
+    return render_template('student/take_exam.html', quiz=quiz, question=question,
+                           current_question_index=question_index, questions=questions, total=total)
+
+#-----------------student to view their results------------------------------------
+@app.route('/student/result/<int:result_id>')
+def view_result(result_id):
     if 'username' not in session:
         flash('Please log in first.', 'error')
         return redirect(url_for('login'))
 
     db = SessionLocal()
-    try:
-        user = db.query(User).filter_by(username=session['username']).first()
-        quiz = db.query(Quiz).filter_by(id=quiz_id).first()
+    result = db.query(Result).filter_by(id=result_id).first()
 
-        if not quiz:
-            flash("Quiz not found.", "danger")
-            return redirect(url_for('student_dashboard'))
-
-        total_questions = len(quiz.questions)
-        current_question_index = request.args.get('question_index', 0, type=int)
-
-        # Make sure the index is within bounds
-        if current_question_index < 0:
-            current_question_index = 0
-        elif current_question_index >= total_questions:
-            current_question_index = total_questions - 1
-
-        # Get the current question based on the index
-        question = quiz.questions[current_question_index]
-
-        return render_template(
-            'student/take_exam.html',
-            quiz=quiz,
-            question=question,
-            current_question_index=current_question_index,
-            total=total_questions,
-            duration_minutes=quiz.duration // 60
-        )
-    except Exception as e:
-        flash(f"An error occurred: {str(e)}", "danger")
+    if not result:
+        flash('Result not found', 'danger')
         return redirect(url_for('student_dashboard'))
+
+    db.close()
+
+    return render_template('student/view_result.html', result=result)
+
+#------student submit results route--------------------------------
 @app.route('/submit_exam/<quiz_id>', methods=['POST'])
 def submit_exam(quiz_id):
     if 'username' not in session:
@@ -248,28 +287,35 @@ def submit_exam(quiz_id):
         user = db.query(User).filter_by(username=session['username']).first()
         student_profile = user.profile
 
+   
         if not student_profile:
             flash("Complete your profile before proceeding.", "warning")
             return redirect(url_for('complete_profile'))
 
+    
         quiz = db.query(Quiz).filter_by(id=quiz_id).first()
 
         if not quiz:
             flash("Quiz not found.", "danger")
             return redirect(url_for('student_dashboard'))
 
+     
         answers = request.form
+
         total_score = 0
         total_marks = 0
 
+    
         for question in quiz.questions:
-            question_answer = answers.get(f"question_{question.id}")
+            question_answer = answers.get(str(question.id))
             if question_answer == question.correct_option:
                 total_score += question.marks
             total_marks += question.marks
 
+   
         percentage = (total_score / total_marks) * 100 if total_marks else 0
 
+       
         result = Result(
             student_id=user.id,
             quiz_id=quiz.id,

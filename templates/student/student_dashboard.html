@@ -5,60 +5,170 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Student Dashboard</title>
     <style>
-        /* Add your CSS styles here */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h2 {
+            color: #2c3e50;
+            text-align: center;
+        }
+
+        p {
+            font-size: 1.1em;
+            margin-bottom: 10px;
+        }
+
+        hr {
+            margin: 20px 0;
+            border: 1px solid #ddd;
+        }
+
+        .list-group {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        .list-group-item {
+            background-color: #fff;
+            padding: 15px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .list-group-item strong {
+            font-size: 1.2em;
+            color: #2c3e50;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            font-size: 1em;
+            text-decoration: none;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+
+        .btn-primary {
+            background-color: #3498db;
+            color: white;
+            border: none;
+        }
+
+        .btn-primary:hover {
+            background-color: #2980b9;
+        }
+
+        .btn-danger {
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+        }
+
+        .btn-danger:hover {
+            background-color: #c0392b;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: center;
+            border: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #3498db;
+            color: white;
+        }
+
+        tbody tr:hover {
+            background-color: #f9f9f9;
+        }
+
+        footer {
+            margin-top: 40px;
+            padding: 10px;
+            background-color: #2c3e50;
+            color: white;
+        }
+
+        footer p {
+            margin: 0;
+            font-size: 0.9em;
+        }
     </style>
 </head>
 <body>
-    <h1>Welcome, {{ profile.full_name }}</h1>
-    <p>Course: {{ course_name }}</p>
 
-    <h3>Available Quizzes</h3>
-    <ul>
+    <h2>Welcome, {{ profile.full_name }}!</h2>
+    <p>Course: {{ course_name }}</p>
+    <p>Level: {{ profile.level }}</p>
+    <p>Kasneb Number: {{ profile.kasneb_no }}</p>
+
+    <hr>
+
+    <h3>Available Exams</h3>
+    <ul class="list-group">
         {% for quiz in quizzes %}
-            <li>
+            <li class="list-group-item">
                 <strong>{{ quiz.title }}</strong>
                 <p>Duration: {{ quiz.duration }} minutes</p>
-                {% if quiz.id in completed_quiz_ids %}
-                    <button disabled>Done</button>
-                {% else %}
-                    <a href="{{ url_for('take_exam', quiz_id=quiz.id) }}">Take Exam</a>
-                {% endif %}
+                <p>Status: {{ quiz.status }}</p>
+                <a href="{{ url_for('take_exam', quiz_id=quiz.id) }}" class="btn btn-primary">Take Exam</a>
             </li>
         {% else %}
-            <li>No active quizzes available.</li>
+            <li class="list-group-item">No available exams for your course.</li>
         {% endfor %}
     </ul>
 
+    <hr>
+
     <h3>Your Results</h3>
-    <table>
+    <table class="table table-bordered">
         <thead>
             <tr>
-                <th>Quiz Title</th>
+                <th>Subject</th>
                 <th>Score</th>
                 <th>Total Marks</th>
                 <th>Percentage</th>
             </tr>
         </thead>
         <tbody>
-            {% if results %}
-                {% for result in results %}
-                    <tr>
-                        <td>{{ result.quiz.title }}</td>
-                        <td>{{ result.score }} / {{ result.total_marks }}</td>
-                        <td>{{ result.total_marks }}</td>
-                        <td>{{ result.percentage }}%</td>
-                    </tr>
-                {% endfor %}
+            {% for result in results %}
+                <tr>
+                    <td>{{ result.quiz.subject.name }}</td>
+                    <td>{{ result.score }} / {{ result.total_marks }}</td>
+                    <td>{{ result.total_marks }}</td>
+                    <td>{{ result.percentage }}%</td>
+                </tr>
             {% else %}
                 <tr>
-                    <td colspan="4">You have not taken any quizzes yet.</td>
+                    <td colspan="4">No results yet.</td>
                 </tr>
-            {% endif %}
+            {% endfor %}
         </tbody>
     </table>
 
-    <footer>
+    <hr>
+
+    <a href="{{ url_for('logout') }}" class="btn btn-danger">Logout</a>
+
+    <hr>
+
+    <footer class="text-center">
         <p>&copy; {{ year }} Summit Technical College</p>
     </footer>
+
 </body>
 </html>
