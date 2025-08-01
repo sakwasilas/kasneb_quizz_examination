@@ -130,8 +130,7 @@
             timerElement.textContent = `Time left: ${minutes}:${seconds < 10 ? '0' + seconds : seconds}`;
 
             if (timeLeft === 0) {
-                alert("Time is up! The exam will now be submitted.");
-                document.querySelector('form').submit();
+                document.querySelector('form').submit(); // Auto-submit the form when time is up
             } else {
                 timeLeft--;
             }

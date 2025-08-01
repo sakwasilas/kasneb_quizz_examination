@@ -202,9 +202,9 @@ def complete_profile():
 @app.route('/student/take_exam/<int:quiz_id>/<int:question_index>', methods=['GET', 'POST'])
 def take_exam(quiz_id, question_index):
     db = SessionLocal()
-    
+
     quiz = db.query(Quiz).filter_by(id=quiz_id).first()
-    
+
     if not quiz or quiz.status != 'active':
         flash("This exam is not available", "danger")
         return redirect(url_for('student_dashboard'))
@@ -214,7 +214,7 @@ def take_exam(quiz_id, question_index):
         return redirect(url_for('login'))
 
     student_id = session['student_id']
-    
+
     # Prevent retaking the quiz
     existing_result = db.query(Result).filter_by(student_id=student_id, quiz_id=quiz_id).first()
     if existing_result:
@@ -224,7 +224,7 @@ def take_exam(quiz_id, question_index):
     # Get questions for this quiz
     questions = db.query(Question).filter_by(quiz_id=quiz_id).all()
     total = len(questions)
-    
+
     if total == 0:
         flash("This quiz has no questions.", "warning")
         return redirect(url_for('student_dashboard'))
@@ -233,26 +233,43 @@ def take_exam(quiz_id, question_index):
     if request.method == 'POST':
         selected_answer = request.form.get(f'question_{questions[question_index].id}')
         if selected_answer:
-            current_question = questions[question_index]
-            is_correct = (selected_answer == current_question.correct_option)
+            # Add the answer to the session
+            if 'answers' not in session:
+                session['answers'] = {}
+
+            session['answers'][questions[question_index].id] = selected_answer
+
+        # Move to the next question or submit the quiz
+        if question_index + 1 >= total:
+            flash("You have completed the quiz.", "success")
+            # Calculate score here and create Result
+            score = 0
+            total_marks = 0
+            for question_id, answer in session['answers'].items():
+                question = db.query(Question).filter_by(id=question_id).first()
+                if question.correct_option == answer:
+                    score += question.marks
+                total_marks += question.marks
+
+            # Create result record
             result = Result(
                 student_id=student_id,
                 quiz_id=quiz_id,
-                score=current_question.marks if is_correct else 0,
-                total_marks=current_question.marks,
-                percentage=(current_question.marks if is_correct else 0) / current_question.marks * 100 if current_question.marks > 0 else 0,
+                score=score,
+                total_marks=total_marks,
+                percentage=(score / total_marks) * 100 if total_marks else 0,
                 taken_on=datetime.utcnow()  # Store the timestamp for the exam
             )
             db.add(result)
             db.commit()
 
-        # Move to the next question or submit the quiz
-        if question_index + 1 >= total:
-            flash("You have completed the quiz.", "success")
+            session.pop('answers', None)  # Clear session answers
+
             return redirect(url_for('student_results'))
 
         return redirect(url_for('take_exam', quiz_id=quiz_id, question_index=question_index + 1))
 
+    # For GET request, show the current question
     question = questions[question_index]
     return render_template('student/take_exam.html', quiz=quiz, question=question,
                            current_question_index=question_index, questions=questions, total=total)
