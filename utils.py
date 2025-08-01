@@ -17,7 +17,7 @@ def extract_table_html(table):
 
 def save_image_from_run(run, output_dir, image_counter):
     blip_elements = run._element.findall('.//a:blip', namespaces={
-        'a': 'http://schemas.openxmlformats.org/drawingml/2006/main'
+        'a': 'http://schemas.openxmlformats.org/drawing/2006/main'
     })
 
     if not blip_elements:
@@ -60,9 +60,9 @@ def parse_docx_questions(file_stream, image_output_dir=DEFAULT_IMAGE_DIR):
         if not text:
             continue
 
-        # Detect question start
-        if re.match(rf"^{question_number}[\.\)]", text):
-            found_first_question = True
+        # Detect question start (with spacing flexibility)
+        if re.match(rf"^\s*{question_number}[\.\)]\s+", text):
+            # Save previous question
             if current_question:
                 current_question["extra_content"] = ''.join(extra_html_parts) if extra_html_parts else None
                 if current_question.get("question") and current_question.get("answer") in ["a", "b", "c", "d"]:
@@ -71,11 +71,12 @@ def parse_docx_questions(file_stream, image_output_dir=DEFAULT_IMAGE_DIR):
                     skipped += 1
             extra_html_parts = []
 
+            # Extract marks and clean question text
             marks_match = re.search(r"\((\d+)\s?(?:mks|marks?)\)", text, re.IGNORECASE)
             marks = int(marks_match.group(1)) if marks_match else 1
             clean_text = re.sub(r"\s*\(\d+\s?(?:mks|marks?)\)", "", text)
 
-            question_text = re.sub(rf"^{question_number}[\.\)]\s*", "", clean_text)
+            question_text = re.sub(rf"^\s*{question_number}[\.\)]\s+", "", clean_text)
             current_question = {
                 "question": question_text,
                 "a": "", "b": "", "c": "", "d": "",
@@ -85,6 +86,7 @@ def parse_docx_questions(file_stream, image_output_dir=DEFAULT_IMAGE_DIR):
                 "marks": marks
             }
             question_number += 1
+            found_first_question = True
             continue
 
         # Options A-D
@@ -115,7 +117,7 @@ def parse_docx_questions(file_stream, image_output_dir=DEFAULT_IMAGE_DIR):
         else:
             skipped += 1
 
-    # Handle tables if any (append to last question)
+    # Append tables to the last question
     for table in document.tables:
         if current_question:
             table_html = extract_table_html(table)
@@ -123,7 +125,7 @@ def parse_docx_questions(file_stream, image_output_dir=DEFAULT_IMAGE_DIR):
 
     print(f"✅ Parsed {len(questions)} valid questions.")
     if skipped > 0:
-        print(f"⚠️ Skipped {skipped} question(s) due to missing options or answers.")
+        print(f" Skipped {skipped} question(s) due to missing options or answers.")
 
     return questions
 
