@@ -240,7 +240,7 @@ def take_exam(quiz_id, question_index):
             return redirect(url_for('quiz_results', quiz_id=quiz_id))
 
     # If it's a GET request, show the current question
-    return render_template('take_exam.html', quiz=quiz, question=current_question, question_index=question_index)
+    return render_template('student/take_exam.html', quiz=quiz, question=current_question, question_index=question_index)
 
     # For GET request, show the current question
     question = questions[question_index]
