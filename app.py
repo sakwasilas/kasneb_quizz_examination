@@ -276,55 +276,64 @@ def take_exam(quiz_id):
         user = db.query(User).filter_by(username=session['username']).first()
         if not user:
             flash("User not found.", "error")
-            return redirect(url_for('logout'))
+            return redirect(url_for('login'))
 
         quiz = db.query(Quiz).filter_by(id=quiz_id).first()
-
-        if not quiz:
-            flash("Quiz not found.", "danger")
+        if not quiz or quiz.status != 'active':
+            flash('This quiz is not available or not active.', 'error')
             return redirect(url_for('student_dashboard'))
 
-        questions = db.query(Question).filter_by(quiz_id=quiz.id).all()
+        # Get all the questions for the quiz
+        questions = db.query(Question).filter_by(quiz_id=quiz_id).all()
+        if not questions:
+            flash('No questions available for this quiz.', 'error')
+            return redirect(url_for('student_dashboard'))
 
-        # Get the current question index from query parameters
-        question_index = request.args.get('question_index', default=0, type=int)
+        # Handle the GET request and show the current question
+        question_index = int(request.args.get('question_index', 0))
 
-        # Ensure the question_index is within bounds
         if question_index >= len(questions):
-            return redirect(url_for('view_results', quiz_id=quiz.id))
+            flash('Invalid question index.', 'error')
+            return redirect(url_for('student_dashboard'))
 
+        current_question = questions[question_index]
+
+        # Handle the POST request: Collect the answers and calculate the score
         if request.method == 'POST':
-            # Save the selected answer for the current question
-            answer = request.form.get(f"question_{questions[question_index].id}")
+            answer = request.form.get(f"question_{current_question.id}")
             if answer:
-                # Save the answer for the current question to the database
-                # Example: save_answer(user.id, quiz.id, questions[question_index].id, answer)
-                pass
+                # Save answer in session or in a temporary storage for submission
+                session[f"answer_{current_question.id}"] = answer
 
-            # Move to the next question or finish the quiz
-            if question_index < len(questions) - 1:
-                question_index += 1
-            else:
-                # All questions answered, redirect to results page
-                return redirect(url_for('view_results', quiz_id=quiz.id))
+            # Navigate to the next or previous question based on button click
+            if 'next' in request.form:
+                if question_index + 1 < len(questions):
+                    return redirect(url_for('take_exam', quiz_id=quiz_id, question_index=question_index + 1))
+            elif 'previous' in request.form:
+                if question_index - 1 >= 0:
+                    return redirect(url_for('take_exam', quiz_id=quiz_id, question_index=question_index - 1))
+            elif 'submit' in request.form:
+                # If the user clicks "submit" at the end of the exam
+                score = calculate_score(questions)  # Define your scoring function
+                result = Result(user_id=user.id, quiz_id=quiz_id, score=score)
+                db.add(result)
+                db.commit()
+                flash("You have completed the quiz. Your results will be available in the admin dashboard.", "success")
+                return redirect(url_for('student_dashboard'))
 
-            return redirect(url_for('take_exam', quiz_id=quiz.id, question_index=question_index))
-
-        # Timer setup for 2 hours (120 minutes)
-        start_time = time.time()  # Capture the current time for timer functionality
-
-        return render_template(
-            'student/take_exam.html',
-            quiz=quiz,
-            question=questions[question_index],
-            question_index=question_index,
-            total_questions=len(questions),
-            start_time=start_time  # Pass the start time for the timer
-        )
+        return render_template('student/take_exam.html', quiz=quiz, question=current_question, question_index=question_index, total_questions=len(questions))
 
     finally:
         db.close()
 
+def calculate_score(questions):
+    # Calculate the score based on the answers stored in the session
+    score = 0
+    for question in questions:
+        correct_answer = question.correct_answer  # Assuming you have a field for the correct answer
+        if session.get(f"answer_{question.id}") == correct_answer:
+            score += 2  # Adjust the score per correct answer
+    return score
 
 
 
