@@ -203,6 +203,7 @@ def complete_profile():
     return render_template('student/complete_profile.html', courses=courses, student_profile=student_profile)
 
 # -------------------- Take Exam --------------------
+"""
 @app.route('/student/take_exam/<int:quiz_id>', methods=['GET', 'POST'])
 def take_exam(quiz_id):
     if 'username' not in session:
@@ -260,6 +261,57 @@ def take_exam(quiz_id):
         db.rollback()
         flash(f"An error occurred: {str(e)}", "danger")
         return redirect(url_for('student_dashboard'))
+    finally:
+        db.close()
+"""
+@app.route('/student/take_exam/<int:quiz_id>', methods=['GET', 'POST'])
+def take_exam(quiz_id):
+    if 'username' not in session:
+        flash('Please log in first.', 'error')
+        return redirect(url_for('login'))
+
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter_by(username=session['username']).first()
+        if not user:
+            flash("User not found.", "error")
+            return redirect(url_for('logout'))
+
+        quiz = db.query(Quiz).filter_by(id=quiz_id).first()
+
+        if not quiz:
+            flash("Quiz not found.", "danger")
+            return redirect(url_for('student_dashboard'))
+
+        questions = db.query(Question).filter_by(quiz_id=quiz.id).all()
+
+        # Pagination logic for question navigation
+        question_index = request.args.get('question_index', default=0, type=int)
+
+        if request.method == 'POST':
+            # Save the selected answer logic here
+            answer = request.form.get(f"question_{questions[question_index].id}")
+            if answer:
+                # Save the answer for the current question
+                # Example: save_answer(user.id, quiz.id, questions[question_index].id, answer)
+
+                # Handle navigation to the next question
+                question_index = min(question_index + 1, len(questions) - 1)
+
+            return redirect(url_for('take_exam', quiz_id=quiz.id, question_index=question_index))
+
+        # Timer setup for 2 hours (120 minutes)
+        start_time = time.time()  # Capture the current time for timer functionality
+
+        return render_template(
+            'student/take_exam.html',
+            quiz=quiz,
+            question=questions[question_index],
+            question_index=question_index,
+            total_questions=len(questions),
+            start_time=start_time  # Pass the start time for the timer
+        )
+
     finally:
         db.close()
 
