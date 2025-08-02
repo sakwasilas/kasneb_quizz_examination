@@ -1,48 +1,13 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ quiz.title }}</title>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-        }
-        .question {
-            margin-bottom: 20px;
-        }
-        .question p {
-            font-weight: bold;
-        }
-        .question div {
-            margin: 10px 0;
-        }
-        .score {
-            margin-top: 20px;
-            font-weight: bold;
-            color: green;
-        }
-        .flash-message {
-            margin-top: 10px;
-            color: red;
-        }
-        .navigation-buttons {
-            margin-top: 20px;
-        }
-    </style>
-</head>
-<body>
+{% extends 'base.html' %}
 
+{% block content %}
 <div class="container">
-    <h1>{{ quiz.title }}</h1>
-    <h4>Question {{ question_index + 1 }} of {{ questions|length }}</h4>
+    <h2>{{ quiz.title }} - Question {{ question_index + 1 }} of {{ questions|length }}</h2>
 
-    <!-- Display the current question -->
-    <form method="POST" action="{{ url_for('take_exam', quiz_id=quiz.id) }}">
+    <form method="POST" action="{{ url_for('take_exam', quiz_id=quiz.id, question_index=question_index) }}">
         <div class="question">
-            <p>{{ questions[question_index].question_text }}</p>
-            
+            <p><strong>{{ questions[question_index].question_text }}</strong></p>
+
             <div>
                 <input type="radio" name="question_{{ questions[question_index].id }}" value="A" id="A" required> 
                 <label for="A">{{ questions[question_index].option_a }}</label>
@@ -61,16 +26,6 @@
             </div>
         </div>
 
-        <!-- Flash messages -->
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="flash-message {{ category }}">{{ message }}</div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
-
-        <!-- Submit and navigation buttons -->
         <div class="navigation-buttons">
             {% if question_index > 0 %}
                 <a href="{{ url_for('take_exam', quiz_id=quiz.id, question_index=question_index - 1) }}" class="btn btn-secondary">Previous</a>
@@ -82,14 +37,5 @@
             {% endif %}
         </div>
     </form>
-
-    <!-- Show total score after all questions are answered -->
-    {% if question_index >= questions|length %}
-        <div class="score">
-            <p>Your total score: {{ score }} out of {{ total_marks }} ({{ percentage }}%)</p>
-        </div>
-    {% endif %}
 </div>
-
-</body>
-</html>
+{% endblock %}
