@@ -204,7 +204,7 @@ def complete_profile():
     return render_template('student/complete_profile.html', courses=courses, student_profile=student_profile)
 
 # -------------------- Take Exam --------------------
-"""
+
 @app.route('/student/take_exam/<int:quiz_id>', methods=['GET', 'POST'])
 def take_exam(quiz_id):
     if 'username' not in session:
@@ -264,69 +264,8 @@ def take_exam(quiz_id):
         return redirect(url_for('student_dashboard'))
     finally:
         db.close()
-"""
-@app.route('/student/take_exam/<int:quiz_id>', methods=['GET', 'POST'])
-def take_exam(quiz_id):
-    if 'username' not in session:
-        flash('Please log in first.', 'error')
-        return redirect(url_for('login'))
 
-    db = SessionLocal()
-    try:
-        quiz = db.query(Quiz).filter_by(id=quiz_id).first()
-        if not quiz or quiz.status != 'active':
-            flash('This exam is not active.', 'error')
-            return redirect(url_for('student_dashboard'))
 
-        questions = db.query(Question).filter_by(quiz_id=quiz_id).all()
-        question_index = int(request.args.get('question_index', 0))  # Get the current question index
-
-        if request.method == 'POST':
-            # Calculate score after each submission
-            score = calculate_score(questions)
-
-            # Proceed to next question
-            question_index += 1
-            # Flash current score
-            flash(f'Your current score: {score}', 'success')
-
-            # Prevent moving to next question if we have reached the end of the quiz
-            if question_index >= len(questions):
-                flash('You have completed the quiz!', 'success')
-                return redirect(url_for('student_dashboard'))  # Or another route to finish the exam
-
-        # Get current question based on index
-        current_question = questions[question_index] if question_index < len(questions) else None
-
-        return render_template('student/take_exam.html', quiz=quiz, questions=questions,
-                               current_question=current_question, question_index=question_index)
-
-    finally:
-        db.close()
-
-def calculate_score(questions):
-    score = 0
-    for question in questions:
-        # Get user's answer from the form
-        user_answer = request.form.get(f"question_{question.id}")
-        
-        # If user's answer matches the correct option, add the marks
-        if user_answer == question.correct_option:
-            score += question.marks
-
-    return score
-
-def calculate_score(questions):
-    score = 0
-    for question in questions:
-        # Get user's answer from the form
-        user_answer = request.form.get(f"question_{question.id}")
-        
-        # If user's answer matches the correct option, add the marks
-        if user_answer == question.correct_option:
-            score += question.marks
-
-    return score
 
 
 

@@ -27,6 +27,9 @@
             margin-top: 10px;
             color: red;
         }
+        .navigation-buttons {
+            margin-top: 20px;
+        }
     </style>
 </head>
 <body>
@@ -36,29 +39,29 @@
     <h4>Question {{ question_index + 1 }} of {{ questions|length }}</h4>
 
     <!-- Display the current question -->
-    <form method="POST" action="{{ url_for('take_exam', quiz_id=quiz.id, question_index=question_index) }}">
+    <form method="POST" action="{{ url_for('take_exam', quiz_id=quiz.id) }}">
         <div class="question">
-            <p>{{ current_question.question_text }}</p>
+            <p>{{ questions[question_index].question_text }}</p>
             
             <div>
-                <input type="radio" name="question_{{ current_question.id }}" value="A" id="A"> 
-                <label for="A">{{ current_question.option_a }}</label>
+                <input type="radio" name="question_{{ questions[question_index].id }}" value="A" id="A" required> 
+                <label for="A">{{ questions[question_index].option_a }}</label>
             </div>
             <div>
-                <input type="radio" name="question_{{ current_question.id }}" value="B" id="B"> 
-                <label for="B">{{ current_question.option_b }}</label>
+                <input type="radio" name="question_{{ questions[question_index].id }}" value="B" id="B" required> 
+                <label for="B">{{ questions[question_index].option_b }}</label>
             </div>
             <div>
-                <input type="radio" name="question_{{ current_question.id }}" value="C" id="C"> 
-                <label for="C">{{ current_question.option_c }}</label>
+                <input type="radio" name="question_{{ questions[question_index].id }}" value="C" id="C" required> 
+                <label for="C">{{ questions[question_index].option_c }}</label>
             </div>
             <div>
-                <input type="radio" name="question_{{ current_question.id }}" value="D" id="D"> 
-                <label for="D">{{ current_question.option_d }}</label>
+                <input type="radio" name="question_{{ questions[question_index].id }}" value="D" id="D" required> 
+                <label for="D">{{ questions[question_index].option_d }}</label>
             </div>
         </div>
 
-        <!-- Display the flash message for score (if any) -->
+        <!-- Flash messages -->
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
@@ -67,14 +70,23 @@
             {% endif %}
         {% endwith %}
 
-        <!-- Submit button to move to next question -->
-        <button type="submit" class="btn btn-primary">Next Question</button>
+        <!-- Submit and navigation buttons -->
+        <div class="navigation-buttons">
+            {% if question_index > 0 %}
+                <a href="{{ url_for('take_exam', quiz_id=quiz.id, question_index=question_index - 1) }}" class="btn btn-secondary">Previous</a>
+            {% endif %}
+            {% if question_index < questions|length - 1 %}
+                <button type="submit" class="btn btn-primary">Next</button>
+            {% else %}
+                <button type="submit" class="btn btn-success">Submit Exam</button>
+            {% endif %}
+        </div>
     </form>
 
-    <!-- Show the total score once all questions are answered -->
+    <!-- Show total score after all questions are answered -->
     {% if question_index >= questions|length %}
         <div class="score">
-            <p>Your total score: {{ score }}</p>
+            <p>Your total score: {{ score }} out of {{ total_marks }} ({{ percentage }}%)</p>
         </div>
     {% endif %}
 </div>
