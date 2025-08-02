@@ -279,15 +279,21 @@ def take_exam(quiz_id):
             return redirect(url_for('student_dashboard'))
 
         questions = db.query(Question).filter_by(quiz_id=quiz_id).all()
-        question_index = int(request.args.get('question_index', 0))
+        question_index = int(request.args.get('question_index', 0))  # Get the current question index
 
         if request.method == 'POST':
             # Calculate score after each submission
             score = calculate_score(questions)
-            flash(f'Your current score: {score}', 'success')
 
             # Proceed to next question
             question_index += 1
+            # Flash current score
+            flash(f'Your current score: {score}', 'success')
+
+            # Prevent moving to next question if we have reached the end of the quiz
+            if question_index >= len(questions):
+                flash('You have completed the quiz!', 'success')
+                return redirect(url_for('student_dashboard'))  # Or another route to finish the exam
 
         # Get current question based on index
         current_question = questions[question_index] if question_index < len(questions) else None
@@ -297,6 +303,18 @@ def take_exam(quiz_id):
 
     finally:
         db.close()
+
+def calculate_score(questions):
+    score = 0
+    for question in questions:
+        # Get user's answer from the form
+        user_answer = request.form.get(f"question_{question.id}")
+        
+        # If user's answer matches the correct option, add the marks
+        if user_answer == question.correct_option:
+            score += question.marks
+
+    return score
 
 def calculate_score(questions):
     score = 0
