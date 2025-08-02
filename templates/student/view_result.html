@@ -1,19 +1,18 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Exam Results</title>
-    <style>
-        /* Add your CSS styling here */
-    </style>
-</head>
-<body>
-    <h1>Exam Results</h1>
-    <div>
-        <p><strong>Score:</strong> {{ result.score }} / {{ result.total_marks }}</p>
-        <p><strong>Percentage:</strong> {{ result.percentage }}%</p>
-    </div>
-    <a href="{{ url_for('student_dashboard') }}">Back to Dashboard</a>
-</body>
-</html>
+{% extends 'base.html' %}
+
+{% block content %}
+  <div class="container">
+    <h1>Your Results for {{ result.quiz.title }}</h1>
+
+    <h3>Total Score: {{ total_score }}/{{ result.total_questions * 2 }}</h3>
+    <h4>Percentage: {{ percentage }}%</h4>
+
+    {% if percentage >= 50 %}
+      <h4>Congratulations, you passed!</h4>
+    {% else %}
+      <h4>Unfortunately, you did not pass. Keep trying!</h4>
+    {% endif %}
+
+    <a href="{{ url_for('student_dashboard') }}" class="btn btn-primary">Go Back to Dashboard</a>
+  </div>
+{% endblock %}

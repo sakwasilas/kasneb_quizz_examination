@@ -331,22 +331,30 @@ def take_exam(quiz_id):
 #-----------------student to view their results------------------------------------
 @app.route('/student/view_results/<int:quiz_id>', methods=['GET'])
 def view_results(quiz_id):
-    # Retrieve results logic for the student
     db = SessionLocal()
     try:
+        # Get the logged-in user
         user = db.query(User).filter_by(username=session['username']).first()
         if not user:
             flash("User not found.", "error")
             return redirect(url_for('login'))
 
-        # Example: fetch the student's result for the quiz
+        # Retrieve the result for this quiz
         result = db.query(Result).filter_by(user_id=user.id, quiz_id=quiz_id).first()
 
         if not result:
-            flash("No result found.", "error")
+            flash("No result found. Please ensure that you've completed the quiz.", "error")
             return redirect(url_for('student_dashboard'))
 
-        return render_template('student/view_results.html', result=result)
+        # Optionally: Calculate the total score if it's not already stored
+        total_score = sum([q.marks for q in result.answers])  # Assuming `answers` is a relationship in Result
+        total_questions = len(result.answers)
+        percentage = (total_score / (total_questions * 2)) * 100  # Assuming 2 marks per question, modify as needed
+
+        # Add any other result calculations here, e.g., pass/fail
+
+        # Pass data to template
+        return render_template('student/view_results.html', result=result, total_score=total_score, percentage=percentage)
 
     finally:
         db.close()
