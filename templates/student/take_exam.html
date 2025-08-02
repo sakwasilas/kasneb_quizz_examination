@@ -86,10 +86,26 @@
             <div class="question-container">
                 <div class="question">{{ question.question_text }}</div>
                 <ul class="options">
-                    <li><input type="radio" name="question_{{ question.id }}" value="a" {% if question.option_a == question.correct_option %} checked {% endif %}> {{ question.option_a }}</li>
-                    <li><input type="radio" name="question_{{ question.id }}" value="b" {% if question.option_b == question.correct_option %} checked {% endif %}> {{ question.option_b }}</li>
-                    <li><input type="radio" name="question_{{ question.id }}" value="c" {% if question.option_c == question.correct_option %} checked {% endif %}> {{ question.option_c }}</li>
-                    <li><input type="radio" name="question_{{ question.id }}" value="d" {% if question.option_d == question.correct_option %} checked {% endif %}> {{ question.option_d }}</li>
+                    <li>
+                        <input type="radio" name="question_{{ question.id }}" value="a"
+                        {% if question.option_a == question.correct_option %} checked {% endif %}> 
+                        {{ question.option_a }}
+                    </li>
+                    <li>
+                        <input type="radio" name="question_{{ question.id }}" value="b"
+                        {% if question.option_b == question.correct_option %} checked {% endif %}> 
+                        {{ question.option_b }}
+                    </li>
+                    <li>
+                        <input type="radio" name="question_{{ question.id }}" value="c"
+                        {% if question.option_c == question.correct_option %} checked {% endif %}> 
+                        {{ question.option_c }}
+                    </li>
+                    <li>
+                        <input type="radio" name="question_{{ question.id }}" value="d"
+                        {% if question.option_d == question.correct_option %} checked {% endif %}> 
+                        {{ question.option_d }}
+                    </li>
                 </ul>
             </div>
         {% endfor %}
