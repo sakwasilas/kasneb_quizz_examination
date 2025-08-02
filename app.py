@@ -273,58 +273,42 @@ def take_exam(quiz_id):
 
     db = SessionLocal()
     try:
-        user = db.query(User).filter_by(username=session['username']).first()
-        if not user:
-            flash("User not found.", "error")
-            return redirect(url_for('login'))
-
         quiz = db.query(Quiz).filter_by(id=quiz_id).first()
         if not quiz or quiz.status != 'active':
-            flash('This quiz is not available or not active.', 'error')
+            flash('This exam is not active.', 'error')
             return redirect(url_for('student_dashboard'))
 
-        # Get all the questions for the quiz
         questions = db.query(Question).filter_by(quiz_id=quiz_id).all()
-        if not questions:
-            flash('No questions available for this quiz.', 'error')
-            return redirect(url_for('student_dashboard'))
-
-        # Handle the GET request and show the current question
         question_index = int(request.args.get('question_index', 0))
 
-        if question_index >= len(questions):
-            flash('Invalid question index.', 'error')
-            return redirect(url_for('student_dashboard'))
-
-        current_question = questions[question_index]
-
-        # Handle the POST request: Collect the answers and calculate the score
         if request.method == 'POST':
-            answer = request.form.get(f"question_{current_question.id}")
-            if answer:
-                # Save answer in session or in a temporary storage for submission
-                session[f"answer_{current_question.id}"] = answer
+            # Calculate score after each submission
+            score = calculate_score(questions)
+            flash(f'Your current score: {score}', 'success')
 
-            # Navigate to the next or previous question based on button click
-            if 'next' in request.form:
-                if question_index + 1 < len(questions):
-                    return redirect(url_for('take_exam', quiz_id=quiz_id, question_index=question_index + 1))
-            elif 'previous' in request.form:
-                if question_index - 1 >= 0:
-                    return redirect(url_for('take_exam', quiz_id=quiz_id, question_index=question_index - 1))
-            elif 'submit' in request.form:
-                # If the user clicks "submit" at the end of the exam
-                score = calculate_score(questions)  # Define your scoring function
-                result = Result(user_id=user.id, quiz_id=quiz_id, score=score)
-                db.add(result)
-                db.commit()
-                flash("You have completed the quiz. Your results will be available in the admin dashboard.", "success")
-                return redirect(url_for('student_dashboard'))
+            # Proceed to next question
+            question_index += 1
 
-        return render_template('student/take_exam.html', quiz=quiz, question=current_question, question_index=question_index, total_questions=len(questions))
+        # Get current question based on index
+        current_question = questions[question_index] if question_index < len(questions) else None
+
+        return render_template('student/take_exam.html', quiz=quiz, questions=questions,
+                               current_question=current_question, question_index=question_index)
 
     finally:
         db.close()
+
+def calculate_score(questions):
+    score = 0
+    for question in questions:
+        # Get user's answer from the form
+        user_answer = request.form.get(f"question_{question.id}")
+        
+        # If user's answer matches the correct option, add the marks
+        if user_answer == question.correct_option:
+            score += question.marks
+
+    return score
 
 def calculate_score(questions):
     # Calculate the score based on the answers stored in the session

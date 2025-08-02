@@ -3,49 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ quiz.title }}</title>
+    <title>{{ quiz.title }} - Question {{ question_index + 1 }}</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
 </head>
 <body>
-
-<div class="container">
-    <h2>{{ quiz.title }}</h2>
-
-    <form method="POST">
-        <div class="form-group">
-            <label>{{ question.text }}</label>
-            <div>
-                <input type="radio" name="question_{{ question.id }}" value="A" id="q{{ question.id }}_A" required>
-                <label for="q{{ question.id }}_A">{{ question.option_a }}</label>
-            </div>
-            <div>
-                <input type="radio" name="question_{{ question.id }}" value="B" id="q{{ question.id }}_B">
-                <label for="q{{ question.id }}_B">{{ question.option_b }}</label>
-            </div>
-            <div>
-                <input type="radio" name="question_{{ question.id }}" value="C" id="q{{ question.id }}_C">
-                <label for="q{{ question.id }}_C">{{ question.option_c }}</label>
-            </div>
-            <div>
-                <input type="radio" name="question_{{ question.id }}" value="D" id="q{{ question.id }}_D">
-                <label for="q{{ question.id }}_D">{{ question.option_d }}</label>
-            </div>
+    <div class="container">
+        <h2>{{ quiz.title }}</h2>
+        <h4>Question {{ question_index + 1 }} of {{ questions|length }}</h4>
+        
+        {% if current_question %}
+            <form method="POST">
+                <div class="form-group">
+                    <label>{{ current_question.question_text }}</label><br>
+                    <input type="radio" name="question_{{ current_question.id }}" value="A" required> A. {{ current_question.option_a }}<br>
+                    <input type="radio" name="question_{{ current_question.id }}" value="B"> B. {{ current_question.option_b }}<br>
+                    <input type="radio" name="question_{{ current_question.id }}" value="C"> C. {{ current_question.option_c }}<br>
+                    <input type="radio" name="question_{{ current_question.id }}" value="D"> D. {{ current_question.option_d }}<br>
+                </div>
+                <button type="submit" class="btn btn-primary">Next</button>
+            </form>
+        {% else %}
+            <h3>You've completed the quiz!</h3>
+            <a href="{{ url_for('student_dashboard') }}" class="btn btn-success">Go to Dashboard</a>
+        {% endif %}
+        
+        <div class="mt-3">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <ul class="alert alert-info">
+                        {% for category, message in messages %}
+                            <li>{{ message }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            {% endwith %}
         </div>
-
-        <!-- Navigation Buttons -->
-        <div>
-            {% if question_index > 0 %}
-                <button type="submit" name="previous" class="btn btn-secondary">Previous</button>
-            {% endif %}
-            {% if question_index < total_questions - 1 %}
-                <button type="submit" name="next" class="btn btn-primary">Next</button>
-            {% else %}
-                <button type="submit" name="submit" class="btn btn-success">Submit</button>
-            {% endif %}
-        </div>
-    </form>
-
-</div>
-
+    </div>
 </body>
 </html>
