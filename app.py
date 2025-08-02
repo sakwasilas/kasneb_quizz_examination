@@ -310,15 +310,6 @@ def calculate_score(questions):
 
     return score
 
-def calculate_score(questions):
-    # Calculate the score based on the answers stored in the session
-    score = 0
-    for question in questions:
-        correct_answer = question.correct_answer  # Assuming you have a field for the correct answer
-        if session.get(f"answer_{question.id}") == correct_answer:
-            score += 2  # Adjust the score per correct answer
-    return score
-
 
 
 #-----------------student to view their results------------------------------------
