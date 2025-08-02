@@ -204,7 +204,7 @@ def complete_profile():
     return render_template('student/complete_profile.html', courses=courses, student_profile=student_profile)
 
 # -------------------- Take Exam --------------------
-
+"""
 @app.route('/student/take_exam/<int:quiz_id>', methods=['GET', 'POST'])
 def take_exam(quiz_id):
     if 'username' not in session:
@@ -265,7 +265,73 @@ def take_exam(quiz_id):
     finally:
         db.close()
 
+"""
+@app.route('/student/take_exam/<int:quiz_id>', methods=['GET', 'POST'])
+def take_exam(quiz_id):
+    if 'username' not in session:
+        flash('Please log in first.', 'error')
+        return redirect(url_for('login'))
 
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter_by(username=session['username']).first()
+        if not user:
+            flash("User not found.", "error")
+            return redirect(url_for('logout'))
+
+        # Get the quiz and associated questions
+        quiz = db.query(Quiz).filter_by(id=quiz_id).first()
+        if not quiz:
+            flash("Quiz not found.", "error")
+            return redirect(url_for('student_dashboard'))
+
+        questions = db.query(Question).filter_by(quiz_id=quiz.id).all()  # Get the questions
+
+        if request.method == 'POST':
+            answers = request.form  # Get the submitted answers from the form
+            total_score = 0
+            total_marks = 0
+
+            # Check each question's selected answer
+            for question in questions:
+                selected_answer = answers.get(f"question_{question.id}")  # Get selected answer
+
+                # Debugging: print the selected answer and correct answer
+                print(f"Selected answer for question {question.id}: {selected_answer} | Correct answer: {question.correct_option}")
+                
+                # Normalize case for comparison (both to uppercase)
+                if selected_answer and selected_answer.upper() == question.correct_option.upper():
+                    total_score += question.marks
+
+                total_marks += question.marks
+
+            # Calculate the percentage
+            percentage = (total_score / total_marks) * 100 if total_marks else 0
+
+            # Save the result
+            result = Result(
+                student_id=user.id,
+                quiz_id=quiz.id,
+                score=total_score,
+                total_marks=total_marks,
+                percentage=percentage
+            )
+
+            db.add(result)
+            db.commit()
+
+            flash(f'You scored {total_score} out of {total_marks} ({percentage}%)', 'success')
+            return redirect(url_for('student_dashboard'))
+
+        # Render the quiz page with questions
+        return render_template('student/take_exam.html', quiz=quiz, questions=questions)
+
+    except Exception as e:
+        db.rollback()
+        flash(f"An error occurred: {str(e)}", "danger")
+        return redirect(url_for('student_dashboard'))
+    finally:
+        db.close()
 
 
 #-----------------student to view their results------------------------------------
