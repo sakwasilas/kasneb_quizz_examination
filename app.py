@@ -286,18 +286,27 @@ def take_exam(quiz_id):
 
         questions = db.query(Question).filter_by(quiz_id=quiz.id).all()
 
-        # Pagination logic for question navigation
+        # Get the current question index from query parameters
         question_index = request.args.get('question_index', default=0, type=int)
 
+        # Ensure the question_index is within bounds
+        if question_index >= len(questions):
+            return redirect(url_for('view_results', quiz_id=quiz.id))
+
         if request.method == 'POST':
-            # Save the selected answer logic here
+            # Save the selected answer for the current question
             answer = request.form.get(f"question_{questions[question_index].id}")
             if answer:
-                # Save the answer for the current question
+                # Save the answer for the current question to the database
                 # Example: save_answer(user.id, quiz.id, questions[question_index].id, answer)
+                pass
 
-                # Handle navigation to the next question
-                question_index = min(question_index + 1, len(questions) - 1)
+            # Move to the next question or finish the quiz
+            if question_index < len(questions) - 1:
+                question_index += 1
+            else:
+                # All questions answered, redirect to results page
+                return redirect(url_for('view_results', quiz_id=quiz.id))
 
             return redirect(url_for('take_exam', quiz_id=quiz.id, question_index=question_index))
 
@@ -317,23 +326,30 @@ def take_exam(quiz_id):
         db.close()
 
 
+
+
 #-----------------student to view their results------------------------------------
-@app.route('/student/result/<int:result_id>')
-def view_result(result_id):
-    if 'username' not in session:
-        flash('Please log in first.', 'error')
-        return redirect(url_for('login'))
-
+@app.route('/student/view_results/<int:quiz_id>', methods=['GET'])
+def view_results(quiz_id):
+    # Retrieve results logic for the student
     db = SessionLocal()
-    result = db.query(Result).filter_by(id=result_id).first()
+    try:
+        user = db.query(User).filter_by(username=session['username']).first()
+        if not user:
+            flash("User not found.", "error")
+            return redirect(url_for('login'))
 
-    if not result:
-        flash('Result not found', 'danger')
-        return redirect(url_for('student_dashboard'))
+        # Example: fetch the student's result for the quiz
+        result = db.query(Result).filter_by(user_id=user.id, quiz_id=quiz_id).first()
 
-    db.close()
+        if not result:
+            flash("No result found.", "error")
+            return redirect(url_for('student_dashboard'))
 
-    return render_template('student/view_result.html', result=result)
+        return render_template('student/view_results.html', result=result)
+
+    finally:
+        db.close()
 #submit route
 @app.route('/submit_exam/<quiz_id>', methods=['POST'])
 def submit_exam(quiz_id):
