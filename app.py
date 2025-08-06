@@ -699,24 +699,7 @@ def view_courses():
     courses = session.query(Course).all()
     return render_template('admin_courses.html', courses=courses)
 
-# Route to delete a course by ID
-@app.route('/admin/courses/delete/<int:course_id>', methods=['POST'])
-def delete_course(course_id):
-    db = SessionLocal()  # ✅ Create the session here
-    try:
-        course = db.query(Course).get(course_id)
-        if course:
-            db.delete(course)
-            db.commit()
-            flash("Course deleted successfully.", "success")
-        else:
-            flash("Course not found.", "warning")
-    except Exception as e:
-        db.rollback()
-        flash(f"An error occurred: {str(e)}", "danger")
-    finally:
-        db.close()  # ✅ Always close the session
-    return redirect(url_for('admin_dashboard'))
+
 # -------------------- Logout --------------------
 @app.route('/logout')
 def logout():

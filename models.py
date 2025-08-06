@@ -92,6 +92,7 @@ class Course(Base):
     name = Column(String(100), unique=True, nullable=False)
 
     subjects = relationship("Subject", back_populates="course", cascade="all, delete")
+   
 
 class Subject(Base):
     __tablename__ = 'subjects'
