@@ -2,6 +2,10 @@ import os
 import re
 from docx import Document
 from docx.oxml.ns import qn
+from docx.oxml.text.paragraph import CT_P
+from docx.oxml.table import CT_Tbl
+from docx.table import Table
+from docx.text.paragraph import Paragraph
 
 DEFAULT_IMAGE_DIR = "static/question_images"
 
@@ -35,6 +39,16 @@ def save_image_from_run(run, output_dir, image_counter):
 
     return image_filename
 
+def iter_block_items(parent):
+    """
+    Generator that yields paragraphs and tables in order from a docx document.
+    """
+    for child in parent.element.body.iterchildren():
+        if isinstance(child, CT_P):
+            yield Paragraph(child, parent)
+        elif isinstance(child, CT_Tbl):
+            yield Table(child, parent)
+
 def parse_docx_questions(file_stream, image_output_dir=DEFAULT_IMAGE_DIR):
     document = Document(file_stream)
     questions = []
@@ -45,66 +59,76 @@ def parse_docx_questions(file_stream, image_output_dir=DEFAULT_IMAGE_DIR):
 
     os.makedirs(image_output_dir, exist_ok=True)
 
-    for para in document.paragraphs:
-        text = para.text.strip()
+    for block in iter_block_items(document):
+        if isinstance(block, Paragraph):
+            para = block
+            text = para.text.strip()
 
-        # Attach image to the current question
-        for run in para.runs:
-            image_name = save_image_from_run(run, image_output_dir, image_counter + 1)
-            if image_name and current_question:
-                image_counter += 1
-                current_question["image"] = image_name
+            # Attach image to the current question
+            for run in para.runs:
+                image_name = save_image_from_run(run, image_output_dir, image_counter + 1)
+                if image_name and current_question:
+                    image_counter += 1
+                    current_question["image"] = image_name
 
-        if not text:
-            continue
+            if not text:
+                continue
 
-        # ✅ New question starts
-        if re.match(r"^\d+[\.\)]", text):
-            if current_question:
-                current_question["extra_content"] = ''.join(extra_html_parts) if extra_html_parts else None
-                if current_question.get("question") and current_question.get("answer") in ["a", "b", "c", "d"]:
-                    questions.append(current_question)
-                else:
-                    skipped += 1
-                extra_html_parts = []
-
-            # Extract (2mks) or (5 marks)
-            marks_match = re.search(r"\((\d+)\s?(?:mks|marks?)\)", text, re.IGNORECASE)
-            marks = int(marks_match.group(1)) if marks_match else 1
-            clean_text = re.sub(r"\s*\(\d+\s?(?:mks|marks?)\)", "", text)
-
-            question_text = re.sub(r"^\d+[\.\)]\s*", "", clean_text)
-            current_question = {
-                "question": question_text,
-                "a": "", "b": "", "c": "", "d": "",
-                "answer": "",
-                "extra_content": None,
-                "image": None,
-                "marks": marks
-            }
-
-        # ✅ Option line (A., B., etc.)
-        elif re.match(r"^\(?[a-dA-D][\.\)]", text):
-            match = re.match(r"^\(?([a-dA-D])[\.\)]\s*(.+)", text)
-            if match and current_question:
-                label = match.group(1).lower()
-                content = match.group(2).strip()
-                current_question[label] = content
-
-        # ✅ Answer line (e.g., Answer: B)
-        elif re.match(r"^(answer|correct answer):", text, re.IGNORECASE):
-            match = re.search(r":\s*([a-dA-D])", text, re.IGNORECASE)
-            if match:
+            # ✅ New question starts
+            if re.match(r"^\d+[\.\)]", text):
                 if current_question:
-                    current_question["answer"] = match.group(1).lower()
-                else:
-                    print("⚠️ Found answer but no current question defined.")
+                    current_question["extra_content"] = ''.join(extra_html_parts) if extra_html_parts else None
+                    if current_question.get("question") and current_question.get("answer") in ["a", "b", "c", "d"]:
+                        questions.append(current_question)
+                    else:
+                        skipped += 1
+                    extra_html_parts = []
 
-        # ✅ Any extra content like paragraph explanations
-        else:
-            extra_html_parts.append(f"<p>{text}</p>")
+                # Extract marks
+                marks_match = re.search(r"\((\d+)\s?(?:mks|marks?)\)", text, re.IGNORECASE)
+                marks = int(marks_match.group(1)) if marks_match else 1
+                clean_text = re.sub(r"\s*\(\d+\s?(?:mks|marks?)\)", "", text)
 
-    # ✅ After all paragraphs, save final question
+                question_text = re.sub(r"^\d+[\.\)]\s*", "", clean_text)
+                current_question = {
+                    "question": question_text,
+                    "a": "", "b": "", "c": "", "d": "",
+                    "answer": "",
+                    "extra_content": None,
+                    "image": None,
+                    "marks": marks
+                }
+
+            # ✅ Option line (A., B., etc.)
+            elif re.match(r"^\(?[a-dA-D][\.\)]", text):
+                match = re.match(r"^\(?([a-dA-D])[\.\)]\s*(.+)", text)
+                if match and current_question:
+                    label = match.group(1).lower()
+                    content = match.group(2).strip()
+                    current_question[label] = content
+
+            # ✅ Answer line (e.g., Answer: B)
+            elif re.match(r"^(answer|correct answer):", text, re.IGNORECASE):
+                match = re.search(r":\s*([a-dA-D])", text, re.IGNORECASE)
+                if match:
+                    if current_question:
+                        current_question["answer"] = match.group(1).lower()
+                    else:
+                        print("⚠️ Found answer but no current question defined.")
+
+            # ✅ Extra content (instruction, explanation, etc.)
+            else:
+                extra_html_parts.append(f"<p>{text}</p>")
+
+        elif isinstance(block, Table):
+            table_html = extract_table_html(block)
+            if current_question:
+                current_question["extra_content"] = (current_question.get("extra_content") or '') + table_html
+            else:
+                # No question yet, treat table as part of initial instruction
+                extra_html_parts.append(table_html)
+
+    # ✅ Save final question
     if current_question:
         current_question["extra_content"] = ''.join(extra_html_parts) if extra_html_parts else None
         if current_question.get("question") and current_question.get("answer") in ["a", "b", "c", "d"]:
@@ -112,19 +136,14 @@ def parse_docx_questions(file_stream, image_output_dir=DEFAULT_IMAGE_DIR):
         else:
             skipped += 1
 
-    # ✅ Process tables at the end
-    for table in document.tables:
-        if current_question:
-            table_html = extract_table_html(table)
-            current_question["extra_content"] = (current_question.get("extra_content") or '') + table_html
-
     print(f"✅ Parsed {len(questions)} valid questions.")
     if skipped > 0:
-        print(f" Skipped {skipped} question(s) due to missing answers or invalid format.")
+        print(f"⚠️ Skipped {skipped} question(s) due to missing answers or invalid format.")
 
     return questions
 
-def get_quiz_status(session, quiz_id, student_id):
-    from models import Result
-    result = session.query(Result).filter_by(quiz_id=quiz_id, student_id=student_id).first()
-    return 'Completed' if result else 'Pending'
+# (Optional) Sample usage
+# with open("your_question.docx", "rb") as f:
+#     questions = parse_docx_questions(f)
+#     for q in questions:
+#         print(q["question"])
