@@ -143,6 +143,13 @@
             text-align: center;
         }
 
+        .timer {
+            text-align: center;
+            font-size: 1.3em;
+            color: red;
+            margin-bottom: 20px;
+        }
+
         .instructions {
             background-color: white;
             padding: 20px;
@@ -227,59 +234,86 @@
 </head>
 <body>
 
-    <h2>Taking Exam: {{ quiz.title }}</h2>
+    <h2>SUMMIT TECHNICAL COLLEGE: {{ quiz.title }}</h2>
 
-    <!-- Show extra_content from first question only -->
+    <div class="timer">
+        Time Left: <span id="timer">02:00:00</span>
+    </div>
+
     {% if questions and questions[0].extra_content %}
     <div class="instructions">
         {{ questions[0].extra_content | safe }}
     </div>
     {% endif %}
 
-    <form method="POST">
+    <form method="POST" id="exam-form">
         {% for question in questions %}
-            <div class="question-container">
-                <div class="question">
-                    {{ loop.index }}. {{ question.question_text }}
-                </div>
-
-                <ul class="options">
-                    <li>
-                        <label>
-                            <input type="radio" name="question_{{ question.id }}" value="a">
-                            {{ question.option_a }}
-                        </label>
-                    </li>
-                    <li>
-                        <label>
-                            <input type="radio" name="question_{{ question.id }}" value="b">
-                            {{ question.option_b }}
-                        </label>
-                    </li>
-                    <li>
-                        <label>
-                            <input type="radio" name="question_{{ question.id }}" value="c">
-                            {{ question.option_c }}
-                        </label>
-                    </li>
-                    <li>
-                        <label>
-                            <input type="radio" name="question_{{ question.id }}" value="d">
-                            {{ question.option_d }}
-                        </label>
-                    </li>
-                </ul>
+        <div class="question-container">
+            <div class="question">
+                {{ loop.index }}. {{ question.question_text }}
             </div>
+
+            <ul class="options">
+                <li>
+                    <label><input type="radio" name="question_{{ question.id }}" value="a"> {{ question.option_a }}</label>
+                </li>
+                <li>
+                    <label><input type="radio" name="question_{{ question.id }}" value="b"> {{ question.option_b }}</label>
+                </li>
+                <li>
+                    <label><input type="radio" name="question_{{ question.id }}" value="c"> {{ question.option_c }}</label>
+                </li>
+                <li>
+                    <label><input type="radio" name="question_{{ question.id }}" value="d"> {{ question.option_d }}</label>
+                </li>
+            </ul>
+        </div>
         {% endfor %}
 
         <div style="text-align: center;">
-            <button type="submit" class="btn btn-primary">Submit Exam</button>
+            <button type="submit" id="submit-btn" class="btn btn-primary">Submit Exam</button>
         </div>
     </form>
 
     <footer>
         <p>&copy; Summit Technical College</p>
     </footer>
+
+    <script>
+        // Countdown timer (2 hours = 7200 seconds)
+        let totalSeconds = 2 * 60 * 60;
+        const timerDisplay = document.getElementById("timer");
+        const form = document.getElementById("exam-form");
+        const submitBtn = document.getElementById("submit-btn");
+
+        function updateTimer() {
+            const hours = Math.floor(totalSeconds / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            const seconds = totalSeconds % 60;
+
+            timerDisplay.textContent =
+                String(hours).padStart(2, '0') + ":" +
+                String(minutes).padStart(2, '0') + ":" +
+                String(seconds).padStart(2, '0');
+
+            if (totalSeconds > 0) {
+                totalSeconds--;
+            } else {
+                clearInterval(timerInterval);
+                alert("⏰ Time is up! Your exam will now be submitted.");
+                submitBtn.disabled = true;
+                form.submit();
+            }
+        }
+
+        // Run every second
+        const timerInterval = setInterval(updateTimer, 1000);
+
+        // Prevent multiple submissions
+        form.addEventListener("submit", function () {
+            submitBtn.disabled = true;
+        });
+    </script>
 
 </body>
 </html>
