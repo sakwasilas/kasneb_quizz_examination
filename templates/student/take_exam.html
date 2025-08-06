@@ -235,7 +235,8 @@
 <body>
 
     <h2>SUMMIT TECHNICAL COLLEGE: {{ quiz.title }}</h2>
-    <P style="color: skyblue;"><center>Answer allquestion<br>Each question is 2mks<br>Time allowed 2hrs</center></P>
+    <hr>
+    <h2 <center>Answer all question  Each question is 2mks<br>Time allowed 2hrs</center></h>
 
     <div class="timer">
         Time Left: <span id="timer">02:00:00</span>
@@ -243,7 +244,7 @@
 
 
 
-    
+
     {% if questions and questions[0].extra_content %}
     <div class="instructions">
         {{ questions[0].extra_content | safe }}
