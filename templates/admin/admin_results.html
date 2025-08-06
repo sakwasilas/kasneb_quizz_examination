@@ -133,6 +133,14 @@
         font-size: 13px;
       }
     }
+
+    .back-link {
+      display: inline-block;
+      margin-bottom: 15px;
+      color: #007bff;
+      text-decoration: none;
+      font-weight: bold;
+    }
   </style>
 </head>
 <body>
@@ -148,11 +156,14 @@
   <!-- Main Content -->
   <div class="container">
     <div class="header">
-      <H1>SUMMIT TECHNICAL COLLEGE</H1>
+      <h1>SUMMIT TECHNICAL COLLEGE</h1>
       <h1>Admin Dashboard - View Results</h1>
     </div>
 
     <div class="results-container">
+      <!-- Back to Dashboard Link -->
+      <a href="{{ url_for('admin_dashboard') }}" class="back-link">← Back to Admin Dashboard</a>
+
       <h3>Filter & Export Results</h3>
 
       <!-- Filter Form -->
