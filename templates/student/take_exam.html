@@ -143,20 +143,24 @@
             text-align: center;
         }
 
+        .instructions {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
         .question-container {
             background-color: white;
             padding: 20px;
             border-radius: 8px;
-            margin: 20px 0;
+            margin-bottom: 20px;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
 
         .question {
             font-size: 1.2em;
-            margin-bottom: 15px;
-        }
-
-        .extra-content {
             margin-bottom: 15px;
         }
 
@@ -225,42 +229,43 @@
 
     <h2>Taking Exam: {{ quiz.title }}</h2>
 
+    <!-- Show extra_content from first question only -->
+    {% if questions and questions[0].extra_content %}
+    <div class="instructions">
+        {{ questions[0].extra_content | safe }}
+    </div>
+    {% endif %}
+
     <form method="POST">
         {% for question in questions %}
             <div class="question-container">
-                {% if question.extra_content %}
-                    <div class="extra-content">
-                        {{ question.extra_content | safe }}
-                    </div>
-                {% endif %}
-
                 <div class="question">
-                    {{ loop.index }}. {{ question.question }}
+                    {{ loop.index }}. {{ question.question_text }}
                 </div>
 
                 <ul class="options">
                     <li>
                         <label>
                             <input type="radio" name="question_{{ question.id }}" value="a">
-                            {{ question.a }}
+                            {{ question.option_a }}
                         </label>
                     </li>
                     <li>
                         <label>
                             <input type="radio" name="question_{{ question.id }}" value="b">
-                            {{ question.b }}
+                            {{ question.option_b }}
                         </label>
                     </li>
                     <li>
                         <label>
                             <input type="radio" name="question_{{ question.id }}" value="c">
-                            {{ question.c }}
+                            {{ question.option_c }}
                         </label>
                     </li>
                     <li>
                         <label>
                             <input type="radio" name="question_{{ question.id }}" value="d">
-                            {{ question.d }}
+                            {{ question.option_d }}
                         </label>
                     </li>
                 </ul>
