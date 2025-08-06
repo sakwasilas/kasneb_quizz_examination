@@ -147,3 +147,6 @@ def parse_docx_questions(file_stream, image_output_dir=DEFAULT_IMAGE_DIR):
 #     questions = parse_docx_questions(f)
 #     for q in questions:
 #         print(q["question"])
+def get_quiz_status(user_id):
+    # Placeholder implementation
+    return "active"
