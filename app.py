@@ -702,7 +702,7 @@ def view_courses():
 # Route to delete a course by ID
 @app.route('/admin/courses/delete/<int:course_id>', methods=['POST', 'GET'])
 def delete_course(course_id):
-    course = session.query(Course).get(course_id)
+    course = db.query(Course).get(course_id)
     if course:
         try:
             session.delete(course)
