@@ -549,29 +549,7 @@ def edit_course(course_id):
     db.close()
     return render_template('admin/edit_course.html', course=course)
 
-# -------------------- Admin Delete Course --------------------
-@app.route('/admin/delete_course/<int:course_id>', methods=['GET'])
-def delete_course(course_id):
-    if 'user_id' not in session or session['role'] != 'admin':
-        flash('You must be logged in as an admin to access this page.', 'danger')
-        return redirect(url_for('login'))
 
-    db = SessionLocal()
-    course = db.query(Course).filter_by(id=course_id).first()
-
-    if course:
-        try:
-            db.delete(course)
-            db.commit()
-            flash(f'Course "{course.name}" deleted successfully!', 'success')
-        except Exception as e:
-            db.rollback()
-            flash(f'Error deleting course: {str(e)}', 'danger')
-    else:
-        flash('Course not found', 'danger')
-
-    db.close()
-    return redirect(url_for('admin_dashboard'))
 
 # -------------------- Admin Add Subject --------------------
 @app.route('/admin/add_subject', methods=['GET', 'POST'])
