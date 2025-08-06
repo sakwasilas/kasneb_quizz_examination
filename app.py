@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, session, flash, Response
+﻿from flask import Flask, render_template, request, redirect, url_for, session, flash, Response
 from models import User, StudentProfile, Course, Quiz, Result, Subject, Question
 from connection import SessionLocal
 from werkzeug.utils import secure_filename
@@ -714,6 +714,23 @@ def exam_results(quiz_id):
 
     finally:
         db.close()
+
+#------------admin delete course---------------------
+@app.route('/admin/delete_course/<int:course_id>', methods=['POST'])
+def delete_course(course_id):
+    course = db_session.query(Course).get(course_id)
+    if not course:
+        flash("Course not found.", "error")
+    else:
+        try:
+            db_session.delete(course)
+            db_session.commit()
+            flash("Course deleted successfully.", "success")
+        except Exception as e:
+            db_session.rollback()
+            flash(f"Error: {str(e)}", "error")
+
+    return redirect(url_for('admin_dashboard'))
 # -------------------- Logout --------------------
 @app.route('/logout')
 def logout():
