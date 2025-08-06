@@ -1,3 +1,4 @@
+<!----
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -105,6 +106,162 @@
                         <input type="radio" name="question_{{ question.id }}" value="d"
                         {% if question.option_d == question.correct_option %} checked {% endif %}> 
                         {{ question.option_d }}
+                    </li>
+                </ul>
+            </div>
+        {% endfor %}
+
+        <div style="text-align: center;">
+            <button type="submit" class="btn btn-primary">Submit Exam</button>
+        </div>
+    </form>
+
+    <footer>
+        <p>&copy; Summit Technical College</p>
+    </footer>
+
+</body>
+</html>
+--->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Take Exam - {{ quiz.title }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h2 {
+            color: #2c3e50;
+            text-align: center;
+        }
+
+        .question-container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .question {
+            font-size: 1.2em;
+            margin-bottom: 15px;
+        }
+
+        .extra-content {
+            margin-bottom: 15px;
+        }
+
+        .options {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        .options li {
+            margin-bottom: 10px;
+        }
+
+        .options input {
+            margin-right: 10px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            font-size: 1em;
+            text-decoration: none;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background-color: #3498db;
+            color: white;
+            border: none;
+        }
+
+        .btn-primary:hover {
+            background-color: #2980b9;
+        }
+
+        footer {
+            margin-top: 40px;
+            padding: 10px;
+            background-color: #2c3e50;
+            color: white;
+            text-align: center;
+        }
+
+        footer p {
+            margin: 0;
+            font-size: 0.9em;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        table, th, td {
+            border: 1px solid #999;
+        }
+
+        th, td {
+            padding: 8px;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>Taking Exam: {{ quiz.title }}</h2>
+
+    <form method="POST">
+        {% for question in questions %}
+            <div class="question-container">
+                {% if question.extra_content %}
+                    <div class="extra-content">
+                        {{ question.extra_content | safe }}
+                    </div>
+                {% endif %}
+
+                <div class="question">
+                    {{ loop.index }}. {{ question.question }}
+                </div>
+
+                <ul class="options">
+                    <li>
+                        <label>
+                            <input type="radio" name="question_{{ question.id }}" value="a">
+                            {{ question.a }}
+                        </label>
+                    </li>
+                    <li>
+                        <label>
+                            <input type="radio" name="question_{{ question.id }}" value="b">
+                            {{ question.b }}
+                        </label>
+                    </li>
+                    <li>
+                        <label>
+                            <input type="radio" name="question_{{ question.id }}" value="c">
+                            {{ question.c }}
+                        </label>
+                    </li>
+                    <li>
+                        <label>
+                            <input type="radio" name="question_{{ question.id }}" value="d">
+                            {{ question.d }}
+                        </label>
                     </li>
                 </ul>
             </div>
