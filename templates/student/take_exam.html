@@ -124,12 +124,13 @@
 <body>
 
     <div class="header-box">
-        <h2 style="margin-top: 0;">SUMMIT TECHNICAL COLLEGE: {{ quiz.title }}</h2>
-        <p>INSTRUCTION: Answer ALL questions. Each exam is timed for 2 hours.</p>
-        <div class="timer">
-            Time Left: <span id="timer">02:00:00</span>
-        </div>
+    <img src="{{ url_for('static', filename='images/logo.jpg') }}" alt="Logo" style="display: block; margin: 0 auto 10px; max-height: 100px;">
+    <h2 style="margin-top: 0;">SUMMIT TECHNICAL COLLEGE: {{ quiz.title }}</h2>
+    <p>INSTRUCTION: Answer ALL questions. Each exam is timed for 2 hours.</p>
+    <div class="timer">
+        Time Left: <span id="timer">02:00:00</span>
     </div>
+</div>
 
     {% if questions and questions[0].extra_content %}
     <div class="instructions">
