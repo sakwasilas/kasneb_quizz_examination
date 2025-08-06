@@ -110,7 +110,11 @@
     </style>
 </head>
 <body>
-    <h1><center>SUMMIT TECHNICAL COLLEGE</center></h1>
+
+    <div style="background-color: skyblue; padding: 20px; border-radius: 8px; text-align: center; margin-bottom: 20px;">
+        <img src="{{ url_for('static', filename='images/logo.jpg') }}" alt="Logo" style="max-height: 100px; margin-bottom: 10px;">
+        <h1 style="margin: 0;">SUMMIT TECHNICAL COLLEGE</h1>
+    </div>
 
     <h2>Welcome, {{ profile.full_name }}!</h2>
     <p>Course: {{ course_name }}</p>
