@@ -699,6 +699,77 @@ def view_courses():
     courses = session.query(Course).all()
     return render_template('admin_courses.html', courses=courses)
 
+'admin routes for delete'
+#-----------------admin route to delete student______________________
+@app.route('/admin/delete_quiz/<int:quiz_id>', methods=['POST'])
+def delete_quiz(quiz_id):
+    if 'user_id' not in session or session.get('role') != 'admin':
+        flash('Admin access required.', 'danger')
+        return redirect(url_for('login'))
+
+    db = SessionLocal()
+    try:
+        quiz = db.query(Quiz).filter_by(id=quiz_id).first()
+        if not quiz:
+            flash('Quiz not found.', 'danger')
+        else:
+            db.delete(quiz)
+            db.commit()
+            flash('Quiz deleted successfully.', 'success')
+    except Exception as e:
+        db.rollback()
+        flash(f'Error deleting quiz: {str(e)}', 'danger')
+    finally:
+        db.close()
+    return redirect(url_for('admin_dashboard'))
+
+#_________________admin route __________________
+@app.route('/admin/delete_subject/<int:subject_id>', methods=['POST'])
+def delete_subject(subject_id):
+    if 'user_id' not in session or session.get('role') != 'admin':
+        flash('Admin access required.', 'danger')
+        return redirect(url_for('login'))
+
+    db = SessionLocal()
+    try:
+        subject = db.query(Subject).filter_by(id=subject_id).first()
+        if not subject:
+            flash('Subject not found.', 'danger')
+        else:
+            db.delete(subject)
+            db.commit()
+            flash('Subject deleted successfully.', 'success')
+    except Exception as e:
+        db.rollback()
+        flash(f'Error deleting subject: {str(e)}', 'danger')
+    finally:
+        db.close()
+    return redirect(url_for('admin_dashboard'))
+
+#_______________admin route to delete _______________
+
+@app.route('/admin/delete_course/<int:course_id>', methods=['POST'])
+def delete_course(course_id):
+    if 'user_id' not in session or session.get('role') != 'admin':
+        flash('Admin access required.', 'danger')
+        return redirect(url_for('login'))
+
+    db = SessionLocal()
+    try:
+        course = db.query(Course).filter_by(id=course_id).first()
+        if not course:
+            flash('Course not found.', 'danger')
+        else:
+            db.delete(course)
+            db.commit()
+            flash('Course deleted successfully.', 'success')
+    except Exception as e:
+        db.rollback()
+        flash(f'Error deleting course: {str(e)}', 'danger')
+    finally:
+        db.close()
+    return redirect(url_for('admin_dashboard'))
+
 
 # -------------------- Logout --------------------
 @app.route('/logout')

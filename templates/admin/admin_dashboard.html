@@ -106,6 +106,16 @@
       background-color: #e74c3c;
       color: white;
     }
+
+    .delete-btn {
+      background-color: #e74c3c;
+      color: white;
+      border: none;
+      padding: 6px 10px;
+      border-radius: 6px;
+      margin-left: 5px;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
@@ -153,10 +163,13 @@
               <td>{{ quiz.subject.name if quiz.subject else 'N/A' }}</td>
               <td>{{ quiz.status.title() }}</td>
               <td>
-                <form method="POST" action="{{ url_for('toggle_quiz_status', quiz_id=quiz.id) }}">
+                <form method="POST" action="{{ url_for('toggle_quiz_status', quiz_id=quiz.id) }}" style="display:inline;">
                   <button type="submit" class="toggle-btn {{ 'active' if quiz.status == 'active' else 'inactive' }}">
                     {{ 'Deactivate' if quiz.status == 'active' else 'Activate' }}
                   </button>
+                </form>
+                <form method="POST" action="{{ url_for('delete_quiz', quiz_id=quiz.id) }}" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete this quiz?');">
+                  <button type="submit" class="delete-btn">Delete</button>
                 </form>
               </td>
             </tr>
@@ -167,6 +180,97 @@
         <p>No quizzes available.</p>
       {% endif %}
     </div>
+
+    <!-- Student Table -->
+    {% if students %}
+    <div>
+      <div class="section-title">Manage Students</div>
+      <table>
+        <thead>
+          <tr>
+            <th>Full Name</th>
+            <th>Username</th>
+            <th>Course</th>
+            <th>Level</th>
+            <th>Kasneb No</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for student in students %}
+          <tr>
+            <td>{{ student.profile.full_name }}</td>
+            <td>{{ student.username }}</td>
+            <td>{{ student.profile.course.name }}</td>
+            <td>{{ student.profile.level }}</td>
+            <td>{{ student.profile.kasneb_no }}</td>
+            <td>
+              <form method="POST" action="{{ url_for('delete_student', student_id=student.id) }}" onsubmit="return confirm('Are you sure you want to delete this student?');">
+                <button type="submit" class="delete-btn">Delete</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+
+    <!-- Subject Table -->
+    {% if subjects %}
+    <div>
+      <div class="section-title">Manage Subjects</div>
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Course</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for subject in subjects %}
+          <tr>
+            <td>{{ subject.name }}</td>
+            <td>{{ subject.course.name }}</td>
+            <td>
+              <form method="POST" action="{{ url_for('delete_subject', subject_id=subject.id) }}" onsubmit="return confirm('Are you sure you want to delete this subject?');">
+                <button type="submit" class="delete-btn">Delete</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+
+    <!-- Course Table -->
+    {% if courses %}
+    <div>
+      <div class="section-title">Manage Courses</div>
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for course in courses %}
+          <tr>
+            <td>{{ course.name }}</td>
+            <td>
+              <form method="POST" action="{{ url_for('delete_course', course_id=course.id) }}" onsubmit="return confirm('Are you sure you want to delete this course?');">
+                <button type="submit" class="delete-btn">Delete</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
 
   </div>
 </body>
