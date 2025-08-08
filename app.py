@@ -520,7 +520,7 @@ def add_course():
             flash('Course added successfully!', 'success')
             return redirect(url_for('admin_dashboard'))
 
-    return render_template('admin/add_course.html')
+    return render_template('admin/add_course.html',course=course)
 
 # -------------------- Admin Edit Course --------------------
 @app.route('/admin/edit_course/<int:course_id>', methods=['GET', 'POST'])
