@@ -143,6 +143,7 @@
               <th>Course</th>
               <th>Subject</th>
               <th>Status</th>
+              <th>Action</th>
             </tr>
           </thead>
           <tbody>
@@ -152,6 +153,13 @@
               <td>{{ quiz.course.name if quiz.course else 'N/A' }}</td>
               <td>{{ quiz.subject.name if quiz.subject else 'N/A' }}</td>
               <td>{{ quiz.status.title() }}</td>
+              <td>
+                <form method="POST" action="{{ url_for('toggle_quiz_status', quiz_id=quiz.id) }}" style="display:inline;">
+                  <button type="submit" class="toggle-btn {{ 'active' if quiz.status == 'active' else 'inactive' }}">
+                    {{ 'Deactivate' if quiz.status == 'active' else 'Activate' }}
+                  </button>
+                </form>
+              </td>
             </tr>
             {% endfor %}
           </tbody>
