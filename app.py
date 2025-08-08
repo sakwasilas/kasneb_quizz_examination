@@ -520,7 +520,7 @@ def add_course():
             flash('Course added successfully!', 'success')
             return redirect(url_for('admin_dashboard'))
 
-    return render_template('admin/add_course.html',course=course)
+    return render_template('admin/add_course.html')
 
 # -------------------- Admin Edit Course --------------------
 @app.route('/admin/edit_course/<int:course_id>', methods=['GET', 'POST'])
@@ -721,28 +721,7 @@ def delete_student(student_id):
     finally:
         db.close()
     return redirect(url_for('manage_students'))
-#______admin can delete course and edit course__________
-@app.route('/admin/delete_course/<int:course_id>', methods=['POST'])
-def delete_course(course_id):
-    if 'user_id' not in session or session.get('role') != 'admin':
-        flash('Admin access required.', 'danger')
-        return redirect(url_for('login'))
 
-    db = SessionLocal()
-    try:
-        course = db.query(Course).filter_by(id=course_id).first()
-        if not course:
-            flash('Course not found.', 'danger')
-        else:
-            db.delete(course)
-            db.commit()
-            flash('Course deleted successfully.', 'success')
-    except Exception as e:
-        db.rollback()
-        flash(f'Error deleting course: {str(e)}', 'danger')
-    finally:
-        db.close()
-    return redirect(url_for('admin_dashboard'))
 
 
 
