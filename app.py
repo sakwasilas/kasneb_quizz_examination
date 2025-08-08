@@ -699,7 +699,28 @@ def view_courses():
     courses = session.query(Course).all()
     return render_template('admin_courses.html', courses=courses)
 
+'________________delete route________________________'
+@app.route('/admin/delete_student/<int:student_id>', methods=['POST'])
+def delete_student(student_id):
+    if 'user_id' not in session or session.get('role') != 'admin':
+        flash('Admin access required.', 'danger')
+        return redirect(url_for('login'))
 
+    db = SessionLocal()
+    try:
+        student = db.query(User).filter_by(id=student_id).first()
+        if not student:
+            flash('Student not found.', 'danger')
+        else:
+            db.delete(student)
+            db.commit()
+            flash('Student deleted successfully.', 'success')
+    except Exception as e:
+        db.rollback()
+        flash(f'Error deleting student: {str(e)}', 'danger')
+    finally:
+        db.close()
+    return redirect(url_for('manage_students'))
 
 
 
