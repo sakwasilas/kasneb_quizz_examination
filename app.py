@@ -722,6 +722,81 @@ def delete_student(student_id):
         db.close()
     return redirect(url_for('manage_students'))
 
+# --    delete a course ----  
+app.route('/admin/edit_course/<int:course_id>', methods=['GET', 'POST'])
+def edit_course(course_id):
+    if 'user_id' not in session or session['role'] != 'admin':
+        flash('You must be logged in as an admin to access this page.', 'danger')
+        return redirect(url_for('login'))
+
+    db = SessionLocal()
+
+    # Retrieve the course to be edited
+    course = db.query(Course).filter_by(id=course_id).first()
+
+    if not course:
+        flash('Course not found.', 'danger')
+        db.close()
+        return redirect(url_for('admin_dashboard'))
+
+    if request.method == 'POST':
+        # Update the course name
+        course_name = request.form.get('course_name')
+        if course_name:
+            course.name = course_name
+            db.commit()
+            db.close()
+            flash('Course updated successfully!', 'success')
+            return redirect(url_for('admin_dashboard'))
+
+    db.close()
+    return render_template('admin/edit_course.html', course=course)
+
+#  -----delete course -----
+@app.route('/admin/delete_course/<int:course_id>', methods=['POST'])
+def delete_course(course_id):
+    if 'user_id' not in session or session['role'] != 'admin':
+        flash('Admin access required.', 'danger')
+        return redirect(url_for('login'))
+
+    db = SessionLocal()
+
+    try:
+        # Retrieve the course to be deleted
+        course = db.query(Course).filter_by(id=course_id).first()
+
+        if not course:
+            flash('Course not found.', 'danger')
+            return redirect(url_for('admin_dashboard'))
+
+        # Delete the course
+        db.delete(course)
+        db.commit()
+        flash('Course deleted successfully.', 'success')
+
+    except Exception as e:
+        db.rollback()
+        flash(f'Error deleting course: {str(e)}', 'danger')
+    finally:
+        db.close()
+
+    return redirect(url_for('admin_dashboard'))
+
+#  ----view course url --------
+@app.route('/admin/view_courses', methods=['GET'])
+def view_courses():
+    if 'user_id' not in session or session['role'] != 'admin':
+        flash('You must be logged in as an admin to access this page.', 'danger')
+        return redirect(url_for('login'))
+
+    db = SessionLocal()
+    try:
+        # Get all courses
+        courses = db.query(Course).all()
+        return render_template('admin/view_courses.html', courses=courses)
+    finally:
+        db.close()
+
 
 
 

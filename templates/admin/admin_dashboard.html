@@ -111,7 +111,6 @@
 </head>
 <body>
 
-  <!-- Sidebar -->
   <div class="sidebar">
     <img src="{{ url_for('static', filename='images/logo.jpg') }}" alt="Logo">
     <a href="{{ url_for('add_course') }}">Add Course</a>
@@ -119,8 +118,10 @@
     <a href="{{ url_for('upload_exam') }}">Upload Quiz</a>
     <a href="{{ url_for('admin_results') }}">View Results</a>
     <a href="{{ url_for('manage_students') }}">Manage Students</a>
+    <!-- New Link for Managing Courses -->
+    <a href="{{ url_for('view_courses') }}">Manage Courses</a>
     <a href="{{ url_for('logout') }}">Logout</a>
-  </div>
+</div>
 
   <!-- Main Content -->
   <div class="container">
