@@ -781,10 +781,10 @@ def delete_course(course_id):
         db.close()
 
     return redirect(url_for('admin_dashboard'))
-"""
+
 #  ----view course url --------
-@app.route('/admin/view_courses', methods=['GET'])
-def view_courses():
+@app.route('/admin/available_courses', methods=['GET'])
+def available_courses():
     if 'user_id' not in session or session['role'] != 'admin':
         flash('You must be logged in as an admin to access this page.', 'danger')
         return redirect(url_for('login'))
@@ -797,7 +797,7 @@ def view_courses():
     finally:
         db.close()
 
-"""
+
 
 
 # -------------------- Logout --------------------
