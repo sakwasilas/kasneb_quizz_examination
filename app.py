@@ -781,7 +781,7 @@ def delete_course(course_id):
         db.close()
 
     return redirect(url_for('admin_dashboard'))
-
+"""
 #  ----view course url --------
 @app.route('/admin/view_courses', methods=['GET'])
 def view_courses():
@@ -797,7 +797,7 @@ def view_courses():
     finally:
         db.close()
 
-
+"""
 
 
 # -------------------- Logout --------------------
